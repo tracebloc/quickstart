@@ -1,28 +1,37 @@
 # GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/customer-priority-bump.yml`
-# (blob f3c865da70e5d4b9eda8c49a229ba2ca829d06cd) folded with tracebloc/org-config's own caller of it,
+# (blob d17bc351cbc57ae4f89607be2282ad609f1a7131) folded with the private source repo's own caller of it,
 # `.github/workflows/customer-priority-bump-caller.yml` (blob ac9868ebd437e0c4ee636ca9ff1a68b5a2f72fa0), for a PUBLIC repo: GitHub lets a
 # public repo `uses:` a reusable workflow only from a public repo, and the
-# reusables live in the private tracebloc/org-config. So this file carries the
+# reusables live in the private source repo. So this file carries the
 # reusable's jobs inline -- the triggers are the caller's; every `inputs.*` is
 # resolved to a literal (repo-inventory.yml's `caller_inputs` floor, else the
 # reusable's default -- the caller's own toolchain choices are NOT copied); the
 # App-token secrets are named directly; a job whose condition resolves to a
 # constant false is omitted; and each job's display name keeps the
 # `bump / ` prefix so the check contexts branch protection requires do
-# not change. Scripts are still fetched from org-config at run time with a
+# not change. Scripts are still fetched from the private source repo at run time with a
 # read-only App installation token; on a fork PR that token cannot be minted
 # (no secrets), so the checkout fails closed rather than running untrusted input.
 #
-# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
-# no internal references: each one was replaced with `(internal ref)` by the
-# one definition in scripts/public_surface.py (private-repo issue references,
-# private repo names, RFC ids, tenant names). A reference anywhere outside a
-# comment refuses the render instead of being edited -- it is a defect in the
-# source, not a scrub target.
+# PUBLIC SURFACE. This file is delivered to a public repo. Exactly what was
+# scrubbed, and what was not:
 #
-# Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
+#   * COMMENT TEXT -- a whole-line YAML `#` comment, a `#`-first line of a `run:`
+#     script that is not inside a heredoc, and this header -- was scrubbed: every
+#     private-repo issue reference, org-qualified private repo name, RFC id and
+#     tenant name became `(internal ref)`, and the private repo this file was
+#     generated from became `the private source repo`.
+#   * CODE -- everything else: commands, heredoc bodies, strings a workflow posts,
+#     `repository:` values, URLs, step names -- was NOT edited. An internal
+#     reference there refuses the render (it is a defect in the source), with one
+#     exception: the name of the private repo this file was generated from, which
+#     the code states verbatim because the workflow checks that repo out and
+#     fetches its scripts from it at run time. Its bare, unqualified name is not
+#     scrubbed anywhere.
+#
+# Regenerate:  python3 scripts/render-self-contained.py          (in the private source repo)
 # Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
 #
 # The comments below are the reusable's own and describe the reusable; where
@@ -106,7 +115,7 @@ jobs:
   bump:
     name: bump / bump
     if: github.event.label.name == 'from:customer'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       # Authenticates as the tracebloc-release-train App ((internal ref)) instead of
       # one human's PAT. This one needs `issues: write` -- it labels an issue in the
@@ -203,7 +212,7 @@ jobs:
     # equality, so this can only ever be STRICTER than that gate: it may skip work
     # the gate would decline, never admit work the gate refuses.
     if: github.event_name == 'issues' && github.event.label.name == 'work-type:bug'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 10
     # Nothing here uses the caller's GITHUB_TOKEN: every call is made with the
     # App installation token minted below.
@@ -298,31 +307,35 @@ jobs:
           # selftest:label-gate-end
 
           # Every GraphQL call in this job -- both reads AND the write -- goes through
-          # here. `gh api graphql` exits 0 on an HTTP 200 that carries a GraphQL
-          # `errors[]` payload, so an exit code alone cannot tell a completed
-          # operation from a refused one. ONE function rather than a check per call
-          # site: the two reads each carried their own inline copy and the write
-          # carried none, which is exactly how the write came to be fail-open
-          # (Bugbot, .github#313). Rule 1 (derive, never restate) and rule 9 -- the
-          # selftest extracts THIS function by name, so the assertion and the
-          # mutation drive the same code the job runs.
-          reject_graphql_errors() {   # $1=raw payload  $2=the message to fail with
-            # UNPARSEABLE IS ITS OWN ARM, and it has to come first. `jq -e
-            # 'has("errors")'` exits non-zero BOTH when the key is absent and when
-            # the input is not JSON at all, so a single check would read a truncated
-            # or empty body as "no errors" -- fail-open on precisely the input that
-            # means "cannot tell".
-            if ! jq -e . >/dev/null 2>&1 <<< "$1"; then
-              echo "::error::$2 (the response was not readable JSON, so it cannot be" \
-                   "shown to be error-free)" >&2
+          # here. ONE function rather than a check per call site: the two reads
+          # each carried their own inline copy and the write carried none, which
+          # is exactly how the write came to be fail-open (Bugbot, .github#313).
+          # The function is the org-wide one ((internal ref) made every board
+          # writer carry it); the selftest extracts it by name, so the assertion
+          # and the mutation drive the same code the job runs (rule 9).
+          # selftest:graphql-read-start  (byte-identical in every workflow that carries it)
+          # THE BODY DECIDES WHETHER A GraphQL READ SUCCEEDED, never the exit code
+          # alone. An HTTP 200 whose body carries `errors[]` (rate limit, partial
+          # payload, a NOT_FOUND on a sub-field) fed straight into `.data...nodes[]?`
+          # produces NOTHING, and nothing read as "not on the project" -- so the
+          # Item-closed automation could write Cancelled over shipped work
+          # (Bugbot on quickstart#5, (internal ref)). Empty and non-object bodies are
+          # refused for the same reason: a search over nothing finds nothing, and
+          # "found nothing" must never mean "absent". This function never
+          # whitelists an error type; the one benign NOT_FOUND is the caller's call.
+          #   $1  the raw payload   $2  what was being read (prefixes the message)
+          reject_graphql_errors() {
+            if ! jq -e 'type == "object"' >/dev/null 2>&1 <<< "$1"; then
+              echo "::error::$2: the response was not readable JSON (empty, truncated or not an object), so it cannot be shown to be error-free -- UNREADABLE, not absent" >&2
               return 1
             fi
             if jq -e 'has("errors")' <<< "$1" >/dev/null 2>&1; then
-              echo "::error::$2" >&2
+              echo "::error::$2: the response carries GraphQL errors[] ($(jq -r '[.errors[]? | ((.type // "?") + ": " + (.message // "?"))] | join("; ")' <<< "$1")) -- UNREADABLE, not absent" >&2
               return 1
             fi
             return 0
           }
+          # selftest:graphql-read-end
 
 
           # ---- 2. the board, read ONCE ------------------------------------
