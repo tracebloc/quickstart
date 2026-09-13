@@ -1,28 +1,37 @@
 # GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/fr-gate.yml`
-# (blob 97fcf6a3fb0bbb3ff46f3a3f2a9be7e471ae89ee) folded with tracebloc/org-config's own caller of it,
+# (blob 97fcf6a3fb0bbb3ff46f3a3f2a9be7e471ae89ee) folded with the private source repo's own caller of it,
 # `.github/workflows/fr-gate-caller.yml` (blob b2e63da19a0d0369a7d7364b4596f53128f3c8ca), for a PUBLIC repo: GitHub lets a
 # public repo `uses:` a reusable workflow only from a public repo, and the
-# reusables live in the private tracebloc/org-config. So this file carries the
+# reusables live in the private source repo. So this file carries the
 # reusable's jobs inline -- the triggers are the caller's; every `inputs.*` is
 # resolved to a literal (repo-inventory.yml's `caller_inputs` floor, else the
 # reusable's default -- the caller's own toolchain choices are NOT copied); the
 # App-token secrets are named directly; a job whose condition resolves to a
 # constant false is omitted; and each job's display name keeps the
 # `gate / ` prefix so the check contexts branch protection requires do
-# not change. Scripts are still fetched from org-config at run time with a
+# not change. Scripts are still fetched from the private source repo at run time with a
 # read-only App installation token; on a fork PR that token cannot be minted
 # (no secrets), so the checkout fails closed rather than running untrusted input.
 #
-# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
-# no internal references: each one was replaced with `(internal ref)` by the
-# one definition in scripts/public_surface.py (private-repo issue references,
-# private repo names, RFC ids, tenant names). A reference anywhere outside a
-# comment refuses the render instead of being edited -- it is a defect in the
-# source, not a scrub target.
+# PUBLIC SURFACE. This file is delivered to a public repo. Exactly what was
+# scrubbed, and what was not:
 #
-# Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
+#   * COMMENT TEXT -- a whole-line YAML `#` comment, a `#`-first line of a `run:`
+#     script that is not inside a heredoc, and this header -- was scrubbed: every
+#     private-repo issue reference, org-qualified private repo name, RFC id and
+#     tenant name became `(internal ref)`, and the private repo this file was
+#     generated from became `the private source repo`.
+#   * CODE -- everything else: commands, heredoc bodies, strings a workflow posts,
+#     `repository:` values, URLs, step names -- was NOT edited. An internal
+#     reference there refuses the render (it is a defect in the source), with one
+#     exception: the name of the private repo this file was generated from, which
+#     the code states verbatim because the workflow checks that repo out and
+#     fetches its scripts from it at run time. Its bare, unqualified name is not
+#     scrubbed anywhere.
+#
+# Regenerate:  python3 scripts/render-self-contained.py          (in the private source repo)
 # Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
 #
 # The comments below are the reusable's own and describe the reusable; where
@@ -128,7 +137,7 @@ jobs:
       # The two steps below used to carry it inline; the release train needs the
       # same walk to cut the prod hop at the FR frontier, and a second copy in
       # release-train is the drift rule 9 forbids. So the script is checked out
-      # of tracebloc/org-config -- same shape as bugbot-gate.yml and
+      # of the private source repo -- same shape as bugbot-gate.yml and
       # code-quality.yml -- into a path beside the caller's checkout. org-config
       # is PRIVATE (it replaced the public `.github` as the host on 2026-09-10),
       # so the checkout carries a read-only App installation token minted just
