@@ -1,4 +1,4 @@
-# GENERATED FILE -- DO NOT EDIT BY HAND (tracebloc/backend#3591).
+# GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/customer-priority-bump.yml`
 # (blob f3c865da70e5d4b9eda8c49a229ba2ca829d06cd) folded with tracebloc/org-config's own caller of it,
@@ -14,6 +14,13 @@
 # not change. Scripts are still fetched from org-config at run time with a
 # read-only App installation token; on a fork PR that token cannot be minted
 # (no secrets), so the checkout fails closed rather than running untrusted input.
+#
+# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
+# no internal references: each one was replaced with `(internal ref)` by the
+# one definition in scripts/public_surface.py (private-repo issue references,
+# private repo names, RFC ids, tenant names). A reference anywhere outside a
+# comment refuses the render instead of being edited -- it is a defect in the
+# source, not a scrub target.
 #
 # Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
 # Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
@@ -32,7 +39,7 @@ name: Label-driven issue triage
 #                      Writes no board field -- the Priority single-select was
 #                      removed from the board under D5.
 #   work-type:bug   -> move the issue's kanban card from `Backlog` to `Ready`
-#                      (backend#2348). Defects skip refinement.
+#                      ((internal ref)). Defects skip refinement.
 #
 # WHY BOTH LIVE IN ONE FILE, AND WHY THE FILENAME NO LONGER MATCHES
 # ----------------------------------------------------------------
@@ -53,18 +60,18 @@ name: Label-driven issue triage
 # work -- it no longer waits on anything, since the wiring below is complete.
 #
 # WIRED EVERYWHERE NOW. Every repo has a caller (`.github`'s landed under
-# backend#2396) and `customer_priority_bump_caller_missing` is GONE from
+# (internal ref)) and `customer_priority_bump_caller_missing` is GONE from
 # `repo-inventory.yml` -- no repo carries that key any more, so any text sending a
 # reader to that lookup is describing a key that cannot answer. (The STRING still
 # appears elsewhere in the repo, in `scripts/reason-citations.py` and in this
 # comment; it is the INVENTORY that no longer records it. @aptracebloc on #350.)
 #
-# THE LABEL GAP IS CLOSED, AND NOW ASSERTED (backend#2598). This block used to
+# THE LABEL GAP IS CLOSED, AND NOW ASSERTED ((internal ref)). This block used to
 # record a live defect: repos carrying this caller with no `work-type:*` labels at
 # all. GitHub silently DROPS a template label the target repo lacks -- no error, no
 # annotation, no run -- so the issue was filed unlabelled, `bug-to-ready` never saw
 # its label, and the card sat in `Backlog`, the refinement queue nobody pulls from.
-# The exact miss backend#2348 was filed to close, surviving in the repos a
+# The exact miss (internal ref) was filed to close, surviving in the repos a
 # caller-presence check calls done.
 #
 # Measured 2026-08-27 before the fix: `design-system-v2`, `release-train` and `rfcs`
@@ -78,7 +85,7 @@ name: Label-driven issue triage
 #
 # TWO LESSONS WORTH MORE THAN THE FIX, both about the DOMAIN and not the answer:
 #
-#   * `e2e-test-agent` was invisible to backend#2598 as filed, because that ticket
+#   * `e2e-test-agent` was invisible to (internal ref) as filed, because that ticket
 #     derived over the `work-type:*` PREFIX. That repo had `work-type:bug` and
 #     `priority` and none of the other five, so a prefix sweep called it covered
 #     while four labels its templates apply were being dropped. Deriving from a
@@ -101,7 +108,7 @@ jobs:
     if: github.event.label.name == 'from:customer'
     runs-on: ubuntu-latest
     steps:
-      # Authenticates as the tracebloc-release-train App (backend#2036) instead of
+      # Authenticates as the tracebloc-release-train App ((internal ref)) instead of
       # one human's PAT. This one needs `issues: write` -- it labels an issue in the
       # calling repo -- which the App gained alongside `organization_projects: write`.
       # `owner:` makes the token ORG-scoped so the same mint works for every caller.
@@ -114,7 +121,7 @@ jobs:
           app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
           private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          # LEAST PRIVILEGE, DERIVED FROM THIS JOB'S ONE CALL (backend#2157). The
+          # LEAST PRIVILEGE, DERIVED FROM THIS JOB'S ONE CALL ((internal ref)). The
           # step below runs `gh issue edit --add-label priority` and nothing else:
           # it resolves the issue and the repo's label set (Issues read) and writes
           # the label (Issues write). `issues: write` subsumes both.
@@ -126,7 +133,7 @@ jobs:
           #
           # `repositories:` is deliberately NOT narrowed, matching the reasoning on
           # the `bug-to-ready` mint below: repo narrowing is measured in this org
-          # for a READ (add-to-kanban.yml, backend#2181) and not for a WRITE, and an
+          # for a READ (add-to-kanban.yml, (internal ref)) and not for a WRITE, and an
           # unmeasured narrowing on a workflow that fires from every repo in the
           # fleet fails red on every customer-labelled issue.
           #
@@ -146,7 +153,7 @@ jobs:
           # Priority single-select field has been removed from the board.
           #
           # THE TRIGGER LABEL'S OWN DESCRIPTION NOW SAYS SO TOO, and for months it
-          # said the opposite (backend#2743). All twenty enrolled repos advertised
+          # said the opposite ((internal ref)). All twenty enrolled repos advertised
           # `from:customer` as "auto-bumps Priority to P1" -- an outcome D5 deleted
           # and this step stopped producing -- so the label that fires the rule
           # promised a board value nobody would ever see. It was uniformly wrong
@@ -164,13 +171,13 @@ jobs:
           # `triage-labels-check.py` (.github#364) asserts a triage label EXISTS in
           # every enrolled repo, not that its description still describes this step
           # -- which is exactly how the stale text survived D5 with a green fleet.
-          # backend#2744 closes that, on top of #364 rather than beside it, because
+          # (internal ref) closes that, on top of #364 rather than beside it, because
           # the file it extends is not on `develop` yet.
           gh issue edit "$ISSUE_NUMBER" --repo "$REPO_FULL" --add-label priority
           echo "-> Issue #$ISSUE_NUMBER labelled 'priority'"
 
   # ---------------------------------------------------------------------------
-  #  A bug-labelled issue lands in `Ready`, not `Backlog` (backend#2348)
+  #  A bug-labelled issue lands in `Ready`, not `Backlog` ((internal ref))
   # ---------------------------------------------------------------------------
   # THE RULE, quoted from `org-standards.md`: "label them `work-type:bug` (the
   # Bug template does it) and the board moves the card straight into `Ready`".
@@ -178,8 +185,8 @@ jobs:
   # Nothing implemented it. `add-to-kanban.yml` adds every new issue at
   # `Backlog` and no workflow read the label afterwards, so the rule was carried
   # by whoever remembered. Measured 2026-08-22: seven bug-labelled tickets filed
-  # in one day (backend#2324, #2327, #2329, #2340, #2341, #2344,
-  # frontend-app#871) all landed in `Backlog` and all seven needed a hand-run
+  # in one day ((internal ref), #2327, #2329, #2340, #2341, #2344,
+  # (internal ref)) all landed in `Backlog` and all seven needed a hand-run
   # mutation. A 100% miss rate is the tell that nothing does it at all -- a rule
   # people mostly follow produces a mixed record.
   #
@@ -202,7 +209,7 @@ jobs:
     # App installation token minted below.
     permissions: {}
     steps:
-      # LEAST PRIVILEGE, DERIVED FROM WHAT THIS RUNS (backend#2157), unlike the
+      # LEAST PRIVILEGE, DERIVED FROM WHAT THIS RUNS ((internal ref)), unlike the
       # `bump` job above which still carries the App's full installation grant
       # (`mint-scope.py`'s EXEMPT row for this file is about that job, not this
       # one). This step reads one issue's project items and writes one
@@ -212,7 +219,7 @@ jobs:
       # `repositories:` is deliberately NOT narrowed here. The board write needs
       # the ORG-level grant that `owner:` yields, and the interaction between repo
       # narrowing and an org ProjectV2 write is measured for a READ
-      # (kanban-columns.yml, backend#2181) and not for a write. An unmeasured
+      # (kanban-columns.yml, (internal ref)) and not for a write. An unmeasured
       # narrowing on a workflow that fires for every bug in the fleet fails red on
       # every defect filed, and this job's whole point is that a defect should not
       # need a human to notice it.
@@ -324,7 +331,7 @@ jobs:
           # derived from, so reading it in the same response as the ids means the
           # decision and the write cannot be made against two different boards.
           #
-          # FAIL CLOSED on the read (backend#1729 rule 3): an unreadable board is
+          # FAIL CLOSED on the read ((internal ref) rule 3): an unreadable board is
           # not evidence that the card may move.
           # shellcheck disable=SC2016  # the $names are GraphQL variables, not shell - keep literal
           if ! PROJ=$(gh api graphql -f query='
@@ -364,7 +371,7 @@ jobs:
             | select(.name=="Status") | .id' <<< "$PROJ")
           # THE OPTION ID IS DERIVED, NEVER HELD. A stored `Ready` option id would
           # keep writing after the board changed under it, and writing the WRONG
-          # column is strictly worse than writing nothing (backend#2348).
+          # column is strictly worse than writing nothing ((internal ref)).
           TARGET_OPT=$(jq -r --arg s "$TARGET_COLUMN" '.data.organization.projectV2.fields.nodes[]?
             | select(.name=="Status") | .options[] | select(.name==$s) | .id' <<< "$PROJ")
           if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "null" ] \
@@ -437,7 +444,7 @@ jobs:
           # FAIL CLOSED, LOUDLY, AND THE DIRECTION IS THE DECISION HERE.
           #
           # The three sibling consumers of the board chose their failure paths as a
-          # SET (backend#2243), and this one resembles `advance-deploy-env.yml`: no
+          # SET ((internal ref)), and this one resembles `advance-deploy-env.yml`: no
           # fallback, abort. `kanban-closure-router.yml` exits 0 on a card it cannot
           # find because declining to write is its conservative end state -- it is
           # protecting shipped state from being overwritten. Declining here is not
@@ -465,7 +472,7 @@ jobs:
           # MONOTONIC. Automation in this org never moves a card backward, and the
           # direction is asked of the BOARD rather than restated here: a rank table
           # in this file would agree with itself while disagreeing with reality
-          # (backend#1729 rule 1).
+          # ((internal ref) rule 1).
           #
           #   promote  the card is at $SOURCE_COLUMN, or is on the board with no
           #            Status at all. Those are the only two states from which
@@ -486,7 +493,7 @@ jobs:
           #            "promotion" a demotion. Checked FIRST, before the
           #            no-Status shortcut, because a board that cannot be trusted
           #            to be in pipeline order cannot be trusted for any card
-          #            (backend#1994 is the same hole one file over: existence was
+          #            ((internal ref) is the same hole one file over: existence was
           #            checked and ORDER was not).
           promote_decision() {   # $1=the card's current column  $2=isArchived
             _s=$(col_index "${SOURCE_COLUMN}"); _t=$(col_index "${TARGET_COLUMN}")
