@@ -1,0 +1,282 @@
+{
+  "_comment": [
+    "Live dev verification records for the family templates. A template",
+    "ships only once a live",
+    "experiment on dev has reached COMPLETED using the template's OWN",
+    "defaults, so these records are what licenses each pre-fill.",
+    "",
+    "Committed rather than left on dev on purpose: the dev cluster gets",
+    "swept, and a verification that depends on state we do not control is",
+    "a claim, not a proof. scripts/check_templates.py rule 13 binds these",
+    "to families.json, so changing a pre-fill fails the check until the",
+    "run is redone and this file refreshed.",
+    "",
+    "Curated, not a raw dump: this is a public repo, so it carries the",
+    "settings under verification and the terminal status only -- no",
+    "infrastructure detail, FLOPs or carbon figures.",
+    "",
+    "round 1 applied cycles/epochs/training_classes only; every other",
+    "field coincided with the template EXCEPT callbacks, which came back",
+    "'[]' because terminate_on_nan_callback() was never called. round 2",
+    "applied every uncommented line of each settings cell. Both are kept:",
+    "round 1 is real evidence for the pre-fills, round 2 for the whole",
+    "cell."
+  ],
+  "captured": "2026-09-09",
+  "environment": "dev",
+  "runs": {
+    "vision": {
+      "family": "vision_from_scratch",
+      "dataset": "d0gfu0c1",
+      "model": "resnet_18",
+      "rounds": {
+        "2_full_settings_cell": {
+          "experiment": "eaxx647p",
+          "status": "COMPLETED",
+          "minutes": 40.3,
+          "cycles": 20,
+          "epochs": 1,
+          "aggregation_strategy": "fedavg",
+          "optimizer": "sgd",
+          "seed": 0,
+          "learningRate": {
+            "type": "constant",
+            "value": 0.001
+          },
+          "validation_split": 0.07,
+          "callbacks": "[{'terminateOnNaN': ['']}]",
+          "error_reason": null,
+          "data_type": "rgb",
+          "shuffle": true
+        },
+        "1_prefills": {
+          "experiment": "elcm69bi",
+          "status": "COMPLETED",
+          "minutes": 48.2,
+          "cycles": 20,
+          "epochs": 1,
+          "aggregation_strategy": "fedavg",
+          "optimizer": "sgd",
+          "seed": 0,
+          "learningRate": {
+            "type": "constant",
+            "value": 0.001
+          },
+          "validation_split": 0.07,
+          "callbacks": "[]",
+          "error_reason": null,
+          "data_type": "rgb",
+          "shuffle": true
+        }
+      }
+    },
+    "nlp_finetune": {
+      "family": "nlp_finetune",
+      "dataset": "d66zp15z",
+      "model": "simple_text",
+      "rounds": {
+        "2_full_settings_cell": {
+          "experiment": "enpm5bls",
+          "status": "COMPLETED",
+          "minutes": 16.9,
+          "cycles": 8,
+          "epochs": 1,
+          "aggregation_strategy": "fedavg",
+          "optimizer": "sgd",
+          "seed": 0,
+          "learningRate": {
+            "type": "constant",
+            "value": 0.001
+          },
+          "validation_split": 0.07,
+          "callbacks": "[{'terminateOnNaN': ['']}]",
+          "error_reason": null,
+          "data_shape": 128
+        },
+        "1_prefills": {
+          "experiment": "ej5olgjp",
+          "status": "COMPLETED",
+          "minutes": 19.6,
+          "cycles": 8,
+          "epochs": 1,
+          "aggregation_strategy": "fedavg",
+          "optimizer": "sgd",
+          "seed": 0,
+          "learningRate": {
+            "type": "constant",
+            "value": 0.001
+          },
+          "validation_split": 0.07,
+          "callbacks": "[]",
+          "error_reason": null,
+          "data_shape": 64
+        }
+      }
+    },
+    "nlp_generative": {
+      "family": "nlp_generative",
+      "dataset": "dy19kuwc",
+      "model": "simple_causal_lm",
+      "rounds": {
+        "2_full_settings_cell": {
+          "experiment": "e6lymzry",
+          "status": "COMPLETED",
+          "minutes": 11.4,
+          "cycles": 5,
+          "epochs": 1,
+          "aggregation_strategy": "fedavg",
+          "optimizer": "sgd",
+          "seed": 0,
+          "learningRate": {
+            "type": "constant",
+            "value": 0.001
+          },
+          "validation_split": 0.05,
+          "callbacks": "[{'terminateOnNaN': ['']}]",
+          "error_reason": null,
+          "data_shape": 128
+        },
+        "1_prefills": {
+          "experiment": "ehro8f4y",
+          "status": "COMPLETED",
+          "minutes": 15.3,
+          "cycles": 5,
+          "epochs": 1,
+          "aggregation_strategy": "fedavg",
+          "optimizer": "sgd",
+          "seed": 0,
+          "learningRate": {
+            "type": "constant",
+            "value": 0.001
+          },
+          "validation_split": 0.05,
+          "callbacks": "[]",
+          "error_reason": null,
+          "data_shape": 128
+        }
+      }
+    },
+    "embeddings": {
+      "family": "embeddings",
+      "dataset": "diyeknwn",
+      "model": "simple_text_encoder",
+      "rounds": {
+        "2_full_settings_cell": {
+          "experiment": "erl4u2pk",
+          "status": "COMPLETED",
+          "minutes": 18.0,
+          "cycles": 8,
+          "epochs": 1,
+          "aggregation_strategy": "fedavg",
+          "optimizer": "sgd",
+          "seed": 0,
+          "learningRate": {
+            "type": "constant",
+            "value": 0.001
+          },
+          "validation_split": 0.05,
+          "callbacks": "[{'terminateOnNaN': ['']}]",
+          "error_reason": null,
+          "data_shape": 128
+        },
+        "1_prefills": {
+          "experiment": "e31yuuuq",
+          "status": "COMPLETED",
+          "minutes": 20.4,
+          "cycles": 8,
+          "epochs": 1,
+          "aggregation_strategy": "fedavg",
+          "optimizer": "sgd",
+          "seed": 0,
+          "learningRate": {
+            "type": "constant",
+            "value": 0.001
+          },
+          "validation_split": 0.05,
+          "callbacks": "[]",
+          "error_reason": null,
+          "data_shape": 128
+        }
+      }
+    },
+    "tabular_ts": {
+      "family": "tabular_timeseries",
+      "dataset": "d7uuiv8h",
+      "model": "fcn",
+      "rounds": {
+        "2_full_settings_cell": {
+          "experiment": "eeofzvuj",
+          "status": "COMPLETED",
+          "minutes": 28.9,
+          "cycles": 15,
+          "epochs": 1,
+          "aggregation_strategy": "fedavg",
+          "optimizer": "sgd",
+          "seed": 0,
+          "learningRate": {
+            "type": "constant",
+            "value": 0.001
+          },
+          "validation_split": 0.05,
+          "callbacks": "[{'terminateOnNaN': ['']}]",
+          "error_reason": null,
+          "data_shape": 3,
+          "tabular_scaler": "StandardScaler",
+          "encoding_strategy": "label",
+          "normalize_features": true,
+          "handle_missing_values": true,
+          "imputation_strategy": "median"
+        },
+        "1_prefills": {
+          "experiment": "ev42i50f",
+          "status": "COMPLETED",
+          "minutes": 34.0,
+          "cycles": 15,
+          "epochs": 1,
+          "aggregation_strategy": "fedavg",
+          "optimizer": "sgd",
+          "seed": 0,
+          "learningRate": {
+            "type": "constant",
+            "value": 0.001
+          },
+          "validation_split": 0.05,
+          "callbacks": "[]",
+          "error_reason": null,
+          "data_shape": 3,
+          "tabular_scaler": "StandardScaler",
+          "encoding_strategy": "label",
+          "normalize_features": true,
+          "handle_missing_values": true,
+          "imputation_strategy": "median"
+        }
+      }
+    },
+    "survival": {
+      "family": "survival",
+      "dataset": "dz5irpa2",
+      "model": "deepsurv",
+      "rounds": {
+        "1_prefills": {
+          "experiment": "enpo3jbx",
+          "status": "PAUSED",
+          "minutes": null,
+          "cycles": 1,
+          "epochs": 1,
+          "aggregation_strategy": "fedavg",
+          "optimizer": "sgd",
+          "seed": 0,
+          "learningRate": {
+            "type": "constant",
+            "value": 0.001
+          },
+          "validation_split": 0.05,
+          "callbacks": "[]",
+          "error_reason": "ValueError: TTE data validation failed: 'label' column must contain only 0/1 binary event indicators; found 2 distinct out-of-range value(s) at rows [0, 1, 2, 3, 4] (+35 more)",
+          "data_shape": 12,
+          "tabular_scaler": "StandardScaler"
+        }
+      }
+    }
+  }
+}
