@@ -1,7 +1,7 @@
-# GENERATED FILE -- DO NOT EDIT BY HAND (tracebloc/backend#3591).
+# GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/kanban-closure-router.yml`
-# (blob 7ffe4b4c69900fa358142def93c524667350cdda) folded with tracebloc/org-config's own caller of it,
+# (blob fa2c75bfff00979330c8f5d42d9147d0da739acc) folded with tracebloc/org-config's own caller of it,
 # `.github/workflows/kanban-closure-caller.yml` (blob e78122f771274190cbfcc450ccfce7ada2ff077a), for a PUBLIC repo: GitHub lets a
 # public repo `uses:` a reusable workflow only from a public repo, and the
 # reusables live in the private tracebloc/org-config. So this file carries the
@@ -14,6 +14,13 @@
 # not change. Scripts are still fetched from org-config at run time with a
 # read-only App installation token; on a fork PR that token cannot be minted
 # (no secrets), so the checkout fails closed rather than running untrusted input.
+#
+# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
+# no internal references: each one was replaced with `(internal ref)` by the
+# one definition in scripts/public_surface.py (private-repo issue references,
+# private repo names, RFC ids, tenant names). A reference anywhere outside a
+# comment refuses the render instead of being edited -- it is a defect in the
+# source, not a scrub target.
 #
 # Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
 # Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
@@ -31,7 +38,7 @@ name: Route kanban Status on closure
 #   - PR closed without merging      → Cancelled
 #   - Issue closed as completed  → Done (terminal; how it was closed is irrelevant)
 #       (was: mirror the closing PR's Status, which put finished issues in deploy
-#        columns — see the branch below and backend#2722)
+#        columns — see the branch below and (internal ref))
 #   - Issue closed as not_planned    → Cancelled
 #   - Issue closed (no state_reason) → Cancelled (default to abandoned)
 #
@@ -53,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # The mapping comes from .github, not from a copy in this file: one
-      # definition of branch -> Status (backend#2243).
+      # definition of branch -> Status ((internal ref)).
       - name: Mint a read-only token for org-config (private; the caller's own token cannot read it)
         id: org-config-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -72,14 +79,14 @@ jobs:
           path: .kanban-map
           persist-credentials: false
 
-      # Authenticates as the tracebloc-release-train App (backend#2036) instead of
+      # Authenticates as the tracebloc-release-train App ((internal ref)) instead of
       # one human's PAT. Needs both grants: `organization_projects: write` for the
       # card, `issues: write` for the sibling-merge label and the closure comment.
       # `owner:` makes the token ORG-scoped -- a repo-scoped one cannot reach an org
       # ProjectV2, and the closer lookup below is cross-repo besides.
       #
       # No fallback to the old PAT: a fallback would let a broken App path look like
-      # a working migration, which is the defect class backend#1680 exists to remove.
+      # a working migration, which is the defect class (internal ref) exists to remove.
       - name: Mint an installation token
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -87,7 +94,7 @@ jobs:
           app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
           private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          # LEAST PRIVILEGE, DERIVED FROM THIS JOB'S OWN CALLS (backend#2157).
+          # LEAST PRIVILEGE, DERIVED FROM THIS JOB'S OWN CALLS ((internal ref)).
           # Four steps share this token; this is the union of what they call:
           #
           #   organization().projectV2 fields/options             projects read
@@ -129,7 +136,7 @@ jobs:
           # client or website PR routinely closes a `backend` issue), and
           # `organization-projects` is an org-level grant regardless. The closer
           # lookup used to be cited here too; it was removed with the routing change
-          # (backend#2722) and is no longer a reason for anything.
+          # ((internal ref)) and is no longer a reason for anything.
           #
           # NOT PROVEN BY READING. An under-scoped token fails at the call site, and
           # this workflow's failure mode is a card the built-in "Item closed"
@@ -154,13 +161,13 @@ jobs:
           # without them `set -u` aborts the script before any status= output is
           # written, leaving the built-in "Item closed" project workflow to set
           # Status=Cancelled. (They were originally added for the closing-PR-base
-          # lookup, which backend#2722 removed; the other consumers remain.)
+          # lookup, which (internal ref) removed; the other consumers remain.)
           ORG: ${{ 'tracebloc' }}
           REPO_FULL: ${{ github.repository }}
           # The PAT rather than the caller's GITHUB_TOKEN: this step's project reads
           # and the override mapper are cross-repo. (This comment used to explain a
           # closer lookup that ran tokenless and therefore never worked -- .github#126.
-          # backend#2722 removed the lookup entirely, so that history now describes no
+          # (internal ref) removed the lookup entirely, so that history now describes no
           # code and is dropped rather than left to mislead.)
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
@@ -176,7 +183,7 @@ jobs:
           # the same visibility mechanism as SIBLING: a card the weekly pass must
           # disposition, marked so a human can see why.
           #
-          # UNUSABLE, NOT UNREADABLE (backend#2324). Two causes reach this holding
+          # UNUSABLE, NOT UNREADABLE ((internal ref)). Two causes reach this holding
           # state now -- a `.kanban.yml` that cannot be fetched or parsed, and one
           # that reads fine but names a Status the mapping does not declare -- and
           # the second sends an operator hunting a read failure that never happened.
@@ -184,7 +191,7 @@ jobs:
           UNUSABLE_OVERRIDE="false"
           if [ "$EVENT_NAME" = "pull_request" ]; then
             if [ "$PR_MERGED" = "true" ]; then
-              # ONE SHARED MAPPING (backend#2243) -- and this site is why the fix
+              # ONE SHARED MAPPING ((internal ref)) -- and this site is why the fix
               # is a shared script rather than a second `yq` read: this workflow
               # never checks the caller out, so the per-repo `.kanban.yml` override
               # it was silently ignoring has to be FETCHED, not read off disk.
@@ -198,7 +205,7 @@ jobs:
               # door -- and the door opens on any repo whose override cannot be
               # read, which is not a hypothetical population.
               #
-              # `resolve` REFUSES HERE TOO NOW (backend#2324), on an override naming
+              # `resolve` REFUSES HERE TOO NOW ((internal ref)), on an override naming
               # a Status the mapping does not declare. That case used to succeed and hand
               # this arm a name the update step below cannot resolve to an option id
               # -- so it aborted mid-write and reached the same "Item closed" branch
@@ -240,7 +247,7 @@ jobs:
                   # A PR merged into a SIBLING feature branch deploys nothing by
                   # itself — its content travels onward inside the parent PR
                   # (this fallthrough silently stranded 6 such cards;
-                  # backend#1437 mechanism 1). The sibling-merge label below
+                  # (internal ref) mechanism 1). The sibling-merge label below
                   # makes the condition VISIBLE for the weekly board pass. The
                   # Status write is deliberately KEPT: skipping it lets the
                   # project's built-in "Item closed" automation set closed items
@@ -256,18 +263,18 @@ jobs:
           elif [ "$EVENT_NAME" = "issues" ]; then
             if [ "$ISSUE_REASON" = "completed" ]; then
               # A COMPLETED ISSUE IS TERMINAL. It goes to Done, and nothing about how it
-              # was closed changes that (backend#2722).
+              # was closed changes that ((internal ref)).
               #
               # This used to mirror the closing PR's Status, so a PR-closed issue landed
               # in `On dev` / `FR on staging` / `Prod`. That contradicted the board model
               # -- deploy state is a property of a PR; an issue is either finished or it
-              # is not (RFC-BACKEND-1405 D8) -- and it cost real accuracy: on 2026-08-27
+              # is not ((internal ref) D8) -- and it cost real accuracy: on 2026-08-27
               # one session cleared 117 closed issues out of deploy columns by hand
               # (18 + 55 from `FR on staging`, 44 from `On dev`). Two of those passes
               # were functional-review batches, so the next prod payload would have read
               # 73 items larger than the work it actually contained.
               #
-              # WHY THIS RETIRES backend#1600 RATHER THAN FIGHTING IT. #1600 found that
+              # WHY THIS RETIRES (internal ref) RATHER THAN FIGHTING IT. #1600 found that
               # issues parked here by the old mirroring NEVER advanced when the code
               # shipped, and drifted permanently (2026-08-06: all 20 drifted cards were
               # closed issues, 0 PRs). It fixed the stranding by teaching
@@ -311,7 +318,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "Routing decision: status=${STATUS:-(unchanged)} sibling=$SIBLING unusable-override=$UNUSABLE_OVERRIDE"
 
-      # Visibility for backend#1437 mechanism 1. Runs AFTER the Status update
+      # Visibility for (internal ref) mechanism 1. Runs AFTER the Status update
       # so a label failure can never suppress the column write - with the label
       # first, its hard-fail skipped the update via the implicit success()
       # condition and left the card wherever the built-in automation put it
@@ -369,7 +376,7 @@ jobs:
           # Retry briefly to let auto-add fire if needed.
           #
           # A FAILED LOOKUP IS NOT AN ABSENT CARD -- the same class as
-          # advance-deploy-env's per-PR read (Bugbot, org-config#3). This used to
+          # advance-deploy-env's per-PR read (Bugbot, (internal ref)). This used to
           # be `... 2>/dev/null) || RESP='{}'`, so five rate-limited reads in a
           # row read as "not on project after 5 retries", exit 0, and the card
           # kept a Status the merge had just made false while the run stayed
@@ -422,7 +429,7 @@ jobs:
           #
           # Only Done is guarded. A PR-derived Status is a deploy fact and may advance a
           # card normally.
-          # WHICH COLUMNS ARE DEPLOY STATES, ASKED OF THE BOARD (backend#1846).
+          # WHICH COLUMNS ARE DEPLOY STATES, ASKED OF THE BOARD ((internal ref)).
           #
           # This was a hand-maintained list of six names, duplicated in
           # kanban-reconcile.yml -- and it had already rotted once: it carried the
@@ -450,7 +457,7 @@ jobs:
           # Is this column a DEPLOY STATE? Answered from the board's own ORDER --
           # any column at or after "On dev" and at or before "Prod" -- so a column
           # INSERTED between them is classified correctly with no edit here
-          # (backend#1846). Only `col_index` differs between the two workflows,
+          # ((internal ref)). Only `col_index` differs between the two workflows,
           # because only their inputs differ; this decision must not.
           #
           #   yes      a deploy state
@@ -465,7 +472,7 @@ jobs:
           #            included -- comes back `no`, the router writes Done over
           #            shipped state and reconcile asserts it. A reordered board is
           #            UNREADABLE, not evidence that nothing deployed, so it fails
-          #            closed exactly like a missing anchor (backend#1994).
+          #            closed exactly like a missing anchor ((internal ref)).
           classify_column() {
             case "${1:-}" in
               ""|"No status") echo no; return ;;
@@ -499,12 +506,12 @@ jobs:
               # AND SAY SO WHERE SOMEONE WILL SEE IT. Refusing is right, but it
               # parks the card with no way to self-heal, and a run-log notice is
               # invisible by the time anyone looks at the board. The two real
-              # cases needed OPPOSITE answers -- backend#1493 had shipped via
+              # cases needed OPPOSITE answers -- (internal ref) had shipped via
               # cli#452 and belonged in Prod; data-ingestors#488 was reverted and
               # belonged in Done -- so no default is correct and only the person
               # closing it knows which.
                 CLOSE_NOTE="Closed while the board still shows \`$CURRENT_COL\`, which records a deployment."
-                CLOSE_NOTE="$CLOSE_NOTE The automation will not overwrite a deploy state with \`Done\` (RFC-BACKEND-1405 D8),"
+                CLOSE_NOTE="$CLOSE_NOTE The automation will not overwrite a deploy state with \`Done\`,"
                 CLOSE_NOTE="$CLOSE_NOTE so this card stays where it is until someone says which happened:"
                 CLOSE_NOTE="$CLOSE_NOTE **it shipped** - move the card to the column it reached (\`Prod\` if it is in production);"
                 CLOSE_NOTE="$CLOSE_NOTE **nothing was deployed** (reverted, abandoned, superseded) - clear the deploy state, then \`Done\`."
@@ -535,12 +542,12 @@ jobs:
           set -euo pipefail
           # Same write rule as the sibling label below: a swallowed failure means the
           # card silently loses the only marker saying its Status is a placeholder.
-          # `override-unusable`, not `override-unreadable` (backend#2324): the label
+          # `override-unusable`, not `override-unreadable` ((internal ref)): the label
           # is the operator's entry point, and a card can now reach this state with a
           # `.kanban.yml` that read perfectly and named a column that does not exist.
           #
           # NOTHING TO MIGRATE, AND THE REASON IS MEASURED RATHER THAN INFERRED
-          # (backend#2801). This used to rest on a claim that the fleet had no
+          # ((internal ref)). This used to rest on a claim that the fleet had no
           # adopters of the override at all, which stopped being true. The
           # CONCLUSION survives on its own evidence: `override-unreadable` is
           # carried by ZERO issues or PRs org-wide (measured 2026-08-28), so there
@@ -555,7 +562,7 @@ jobs:
           # step, and the parked card never gets the marker this holding state exists
           # to leave. My first wording was 133. The selftest measures it now.
           if ! gh api "repos/$REPO_FULL/labels/override-unusable" >/dev/null 2>&1; then
-            gh api "repos/$REPO_FULL/labels" -f name=override-unusable -f color=d4c5f9 -f description="Holding state: .kanban.yml unreadable, or names an undeclared Status (backend#2324)" >/dev/null
+            gh api "repos/$REPO_FULL/labels" -f name=override-unusable -f color=d4c5f9 -f description="Holding state: .kanban.yml unreadable, or names an undeclared Status" >/dev/null
           fi
           gh api -X POST "repos/$REPO_FULL/issues/$NUMBER/labels" -f "labels[]=override-unusable" >/dev/null
 
@@ -572,6 +579,6 @@ jobs:
           # visibility marker (Bugbot, .github#157). Only the ensure-label
           # probe may miss quietly - a 404 there just means create it.
           if ! gh api "repos/$REPO_FULL/labels/sibling-merge" >/dev/null 2>&1; then
-            gh api "repos/$REPO_FULL/labels" -f name=sibling-merge -f color=bfdadc -f description="Merged into a sibling feature branch; content ships via the parent PR (backend#1437)" >/dev/null
+            gh api "repos/$REPO_FULL/labels" -f name=sibling-merge -f color=bfdadc -f description="Merged into a sibling feature branch; content ships via the parent PR" >/dev/null
           fi
           gh api -X POST "repos/$REPO_FULL/issues/$NUMBER/labels" -f "labels[]=sibling-merge" >/dev/null

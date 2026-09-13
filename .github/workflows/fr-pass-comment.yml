@@ -1,4 +1,4 @@
-# GENERATED FILE -- DO NOT EDIT BY HAND (tracebloc/backend#3591).
+# GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/fr-pass-comment.yml`
 # (blob 5b74b698d095e29a4a20f50d64576029bab31860) folded with tracebloc/org-config's own caller of it,
@@ -15,6 +15,13 @@
 # read-only App installation token; on a fork PR that token cannot be minted
 # (no secrets), so the checkout fails closed rather than running untrusted input.
 #
+# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
+# no internal references: each one was replaced with `(internal ref)` by the
+# one definition in scripts/public_surface.py (private-repo issue references,
+# private repo names, RFC ids, tenant names). A reference anywhere outside a
+# comment refuses the render instead of being edited -- it is a defect in the
+# source, not a scrub target.
+#
 # Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
 # Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
 #
@@ -30,7 +37,7 @@ name: FR pass comment handler
 # (D6: the dev-side review is gone — "On dev" is automatic — so /fr-pass only
 #  applies at staging, the single functional-review gate.)
 #
-# NEVER NO-OP IN SILENCE  (backend#1319)
+# NEVER NO-OP IN SILENCE  ((internal ref))
 #   Every terminating path below leaves a signal on the thread: 👍 when the card
 #   moved, 👎 plus a one-paragraph comment saying why when it did not. The single
 #   deliberate exception is a comment that merely *mentions* the string without
@@ -44,7 +51,7 @@ name: FR pass comment handler
 #   about /fr-pass" filter; authorisation, self-signoff, board membership and the
 #   column check all happen in steps that can report.
 #
-# A REFUSAL IS NOT A SUCCESS  (backend#1413)
+# A REFUSAL IS NOT A SUCCESS  ((internal ref))
 #   Exactly three outcomes exit 0 — `advanced`, `already-advanced` and
 #   `not-a-command`. EVERY other terminating path exits 1, including
 #   `not-authorised`, `self-signoff`, `not-on-project`, `ambiguous-item`,
@@ -94,7 +101,7 @@ jobs:
     # that never gets in can never be reported. The precise match lives in the
     # step.
     #
-    # The other two stop this handler answering itself (backend#1413). Every
+    # The other two stop this handler answering itself ((internal ref)). Every
     # refusal note below contains the literal string `/fr-pass`, so posting one
     # re-fired this workflow — 6 of the 26 runs on 2026-08-01 were the bot reading
     # its own comment. That only ever terminated because the step's anchored grep
@@ -124,7 +131,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      # Authenticates as the tracebloc-release-train App (backend#2036) instead of
+      # Authenticates as the tracebloc-release-train App ((internal ref)) instead of
       # one human's PAT. Needs BOTH grants: `organization_projects: write` to advance
       # the card and `issues: write` to post the outcome comment and its reaction.
       # `owner:` makes the token ORG-scoped -- a repo-scoped one cannot reach an org
@@ -137,7 +144,7 @@ jobs:
           app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
           private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          # LEAST PRIVILEGE, DERIVED FROM THIS JOB'S OWN CALLS (backend#2157).
+          # LEAST PRIVILEGE, DERIVED FROM THIS JOB'S OWN CALLS ((internal ref)).
           # Two steps share this token and between them make six calls; this is the
           # union, with the permission each one documents:
           #
@@ -201,7 +208,7 @@ jobs:
           # Publish an outcome on EVERY exit, including an unplanned one. The
           # reporting step keys off this one output, so a crash halfway through
           # (API error, jq error, a `set -e` trip) still produces a 👎 and an
-          # explanation rather than the silence reported in backend#1319.
+          # explanation rather than the silence reported in (internal ref).
           publish() {
             if [ ! -s "$RESULT_FILE" ]; then
               printf 'internal-error' > "$RESULT_FILE"
@@ -296,7 +303,7 @@ jobs:
           fi
 
           # ----------------------------------------- 3. self sign-off (D30)
-          # THE bug from backend#1319 lived here, as a clause in the job-level
+          # THE bug from (internal ref) lived here, as a clause in the job-level
           # `if`: when the reviewer was also the PR author the whole job was
           # skipped, so no step was left to react or explain. 8 of the 13
           # /fr-pass comments on 2026-07-29 died exactly this way. The rule is
@@ -420,10 +427,10 @@ jobs:
           CURRENT=$(printf '%s' "$NODES" | jq -r '.[0].fieldValueByName.name // ""')
 
           # The two column names below are hard-coded, and this board has been
-          # renamed before (RFC-BACKEND-0008 collapsed the dev-side FR columns).
+          # renamed before ((internal ref) collapsed the dev-side FR columns).
           # Check they still exist, so the next rename fails loudly here instead
           # of reporting "wrong column" for every card on the board.
-          # Rename window (backend#1592): the staging-review column is "Staging
+          # Rename window ((internal ref)): the staging-review column is "Staging
           # (human review)" after the UI rename and "FR on staging" before it, and
           # the rename is a single instant with no overlap. So resolve it to
           # whichever exists and keep the loud failure for the case where NEITHER
@@ -577,7 +584,7 @@ jobs:
           # clean advance stays a bare 👍 so the happy path keeps the thread quiet.
           if [ -s "$NOTE_FILE" ]; then
             # Prepend the marker the job `if` tests for, so this handler can
-            # recognise its own notes and not answer them (backend#1413). Added
+            # recognise its own notes and not answer them ((internal ref)). Added
             # here, at the single place a note is posted, rather than in each
             # `decide` call above — a note that forgets it would resurrect the
             # loop. First line, because the job `if` uses startsWith. HTML

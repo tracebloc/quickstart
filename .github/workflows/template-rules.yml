@@ -1,0 +1,90 @@
+name: Template rules
+
+# Runs the D9 template rule checker. Until this existed, NOTHING executed
+# `scripts/check_templates.py`: the only CI change #89 made was arming the
+# shared reusable's `ruff` job, which lints changed `.py` files and says
+# nothing about the templates. So every "enforced" in families.json, the
+# templates README, CLAUDE.md and #89's own body meant "enforced if the author
+# remembers to run it locally" -- a checker that is never invoked is
+# indistinguishable from one that always passes (start-training#89, 5/10).
+#
+# `paths:` is deliberately ABSENT. A path filter here would be the same defect
+# one level up: edit only `scripts/check_templates.py` and the job that
+# validates it would not run.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches: [develop, staging, main]
+
+concurrency:
+  group: template-rules-${{ github.workflow }}-${{ github.ref }}
+  # PR runs supersede each other; PUSH runs must not. Cancelling on push
+  # leaves the earlier commit with a cancelled run and therefore NO verdict,
+  # which reads the same as never having been checked.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  d9-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          # The SDK's `requires-python` excludes older interpreters, and pip
+          # answers that by SILENTLY BACKTRACKING to an ancient release rather
+          # than failing: measured, `pip install tracebloc` under 3.9 resolves
+          # to 0.8.1, whose `_SURVIVAL_FRAMEWORKS` happens to match the mirror
+          # -- so a release predating these templates "confirms" them. Pinning
+          # the interpreter is what makes the floor check below meaningful.
+          python-version: '3.11'
+
+      - name: Install the SDK for the mirror cross-check
+        # `--no-deps` plus the handful of light imports `tracebloc/__init__`
+        # needs. This deliberately does NOT pull torch: the checker only reads
+        # `tracebloc.training.plan._SURVIVAL_FRAMEWORKS`, so a ~20 MB install
+        # buys a real cross-check instead of the "SDK not importable, skipping"
+        # note that made rule 14b advisory everywhere it mattered.
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet --no-deps tracebloc
+          # Derived by FOLLOWING the import chain on a clean 3.11 venv, one
+          # missing module at a time, not by guessing: tracebloc 1.0.7's
+          # `training.plan` needs exactly these six. The first version of this
+          # step omitted numpy and the job went red -- correctly, because
+          # strict mode refuses to pass a mirror it cannot verify. Note pandas
+          # is NOT here: pip warns that tracebloc requires it, but that is the
+          # declared dependency set, not what this import path touches.
+          python -m pip install --quiet numpy psutil requests rich termcolor tqdm
+          # Fail here, loudly, rather than letting the checker report a
+          # vaguer "not importable" one step later.
+          python - <<'PY'
+          import importlib.metadata as m
+          from tracebloc.training.plan import _SURVIVAL_FRAMEWORKS
+          print("tracebloc", m.version("tracebloc"),
+                sorted(getattr(f, "value", f) for f in _SURVIVAL_FRAMEWORKS))
+          PY
+
+      - name: Mutation harness — every rule seen to FAIL
+        # Runs before the checker on purpose: the checker passing tells you the
+        # tree is clean, the harness tells you the checker can still fail. A
+        # deleted rule leaves the checker green (measured: deleting rule 16
+        # still printed "OK -- all D9 rules hold") and only the harness catches
+        # it.
+        run: python3 scripts/check_templates_mutations.py
+
+      - name: D9 rule checker
+        # Runs from the repo root; the checker resolves its own paths.
+        # TRACEBLOC_CHECK_STRICT makes "cannot determine the SDK version" a
+        # FAILURE here rather than a printed note, because a skipped
+        # cross-check in the one place that gates is the whole defect.
+        env:
+          TRACEBLOC_CHECK_STRICT: '1'
+        run: python3 scripts/check_templates.py

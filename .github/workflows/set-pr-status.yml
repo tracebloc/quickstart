@@ -1,4 +1,4 @@
-# GENERATED FILE -- DO NOT EDIT BY HAND (tracebloc/backend#3591).
+# GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/set-pr-status.yml`
 # (blob 953b8bb9bbc8675586987c39bbbd853da18c508c) folded with tracebloc/org-config's own caller of it,
@@ -15,6 +15,13 @@
 # read-only App installation token; on a fork PR that token cannot be minted
 # (no secrets), so the checkout fails closed rather than running untrusted input.
 #
+# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
+# no internal references: each one was replaced with `(internal ref)` by the
+# one definition in scripts/public_surface.py (private-repo issue references,
+# private repo names, RFC ids, tenant names). A reference anywhere outside a
+# comment refuses the render instead of being edited -- it is a defect in the
+# source, not a scrub target.
+#
 # Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
 # Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
 #
@@ -24,13 +31,13 @@
 name: Set PR card Status on project
 
 # Reusable workflow. Called from each active repo on PR open / reopen /
-# draft-toggle / title-or-body edit (`edited`, added under tracebloc/backend#2556
+# draft-toggle / title-or-body edit (`edited`, added under (internal ref)
 # so the `closing-ref` job re-runs when the fields it reads change).
 # Moves the PR's card to the right Status:
 #   - draft PR  → In progress
 #   - non-draft → Code review
 #
-# TWO JOBS, and the second one is here on purpose (tracebloc/backend#2364).
+# TWO JOBS, and the second one is here on purpose ((internal ref)).
 #
 #   set-status    writes the card's Status (below)
 #   closing-ref   checks that a PR whose TITLE names a ticket actually LINKS it
@@ -39,7 +46,7 @@ name: Set PR card Status on project
 # Three constraints, and this file is the only host that satisfies all three:
 #
 #   1. It needs a token that can read the PR *and* an issue in ANOTHER repo --
-#      almost every house ticket is in `tracebloc/backend`, and nearly every repo
+#      almost every house ticket is in `(internal ref)`, and nearly every repo
 #      is private. This file already mints an ORG-SCOPED installation token for
 #      the `tracebloc-release-train` App (measured 2026-08-23: `issues: write`,
 #      `pull_requests: write`, `repository_selection: all`), and every one of its
@@ -66,7 +73,7 @@ name: Set PR card Status on project
 
 on:
   pull_request:
-    # `edited` is load-bearing, not decoration (tracebloc/backend#2556). The
+    # `edited` is load-bearing, not decoration ((internal ref)). The
     # `closing-ref` job decides its verdict from the PR TITLE and the PR BODY, and
     # `edited` is the ONLY event GitHub fires when either changes. Without it the
     # two fields the gate reads are the two fields that can change without
@@ -78,20 +85,20 @@ on:
     # It also makes the remediation usable at all. Retitling or editing a body to
     # SATISFY the gate did not re-run it either, so a red persisted on a PR that
     # now complied: 20 sync PRs had to be cleared with 20 manual `gh run rerun`
-    # calls (backend#2555), because the only in-band re-trigger was closing and
+    # calls ((internal ref)), because the only in-band re-trigger was closing and
     # reopening someone else's PR.
     #
-    # Same one-word fix, same reason, as `fr-gate-caller.yml` (backend#1945): a
+    # Same one-word fix, same reason, as `fr-gate-caller.yml` ((internal ref)): a
     # gate whose verdict depends on a mutable field must re-run when that field
     # mutates.
     types: [opened, reopened, ready_for_review, converted_to_draft, edited]
 
-# ONE RUN PER PR WINS, AND IT IS THE NEWEST (backend#2767).
+# ONE RUN PER PR WINS, AND IT IS THE NEWEST ((internal ref)).
 #
 # Every trigger this file answers can fire twice in quick succession -- a
 # title fixed straight after a body edit, a ready_for_review immediately
 # after an edit -- and `edited` made that ordinary rather than rare: the
-# 19-PR sweep for backend#2756 armed `edited` on all 20 callers, so what
+# 19-PR sweep for (internal ref) armed `edited` on all 20 callers, so what
 # was latent on one repo is now live fleet-wide.
 #
 # Without a group the runs race and the LOSER writes last: an older
@@ -156,7 +163,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # ONLY WHILE THE PR IS OPEN (tracebloc/backend#2556). This condition is a
+  # ONLY WHILE THE PR IS OPEN ((internal ref)). This condition is a
   # DIRECT CONSEQUENCE of adding `edited` to the callers, and it is not optional.
   #
   # Before `edited`, every trigger this workflow had -- opened, reopened,
@@ -188,7 +195,7 @@ jobs:
           fi
 
       # Board writes authenticate as the tracebloc-release-train App, not a human's
-      # PAT (backend#2036). The App's installation budget is separate from any
+      # PAT ((internal ref)). The App's installation budget is separate from any
       # person's interactive `gh` usage and does not vanish when someone is
       # offboarded -- `PROJECTS_KANBAN_TOKEN` was ONE user PAT shared by every
       # caller in the fleet, both crons, and that person's own shell, and it was
@@ -207,11 +214,11 @@ jobs:
           app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
           private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          # SCOPED TO WHAT THIS JOB ACTUALLY DOES (backend#2157). Without these
+          # SCOPED TO WHAT THIS JOB ACTUALLY DOES ((internal ref)). Without these
           # it minted the App's ENTIRE permission set -- contents:write,
           # issues:write, administration:read and the rest -- across every repo
           # the installation covers, on every PR event in the fleet. Of the four
-          # mints backend#2157 left, this one has the largest exposure purely
+          # mints (internal ref) left, this one has the largest exposure purely
           # because of how often it runs.
           #
           # DERIVED FROM THE CALLS BELOW rather than copied from a template:
@@ -281,13 +288,13 @@ jobs:
             sleep 5
           done
 
-          # FAIL CLOSED (backend#2037). This used to log the miss and `exit 0`, so a
+          # FAIL CLOSED ((internal ref)). This used to log the miss and `exit 0`, so a
           # PR that lost the add-to-kanban race stayed at No Status behind a GREEN
           # check -- nothing surfaced it, and the board's "no card sits at No Status"
-          # invariant was broken by the workflow that reports it upheld. backend#1950
+          # invariant was broken by the workflow that reports it upheld. (internal ref)
           # lost that race by four seconds and sat unnoticed.
           #
-          # THE MEASUREMENT THAT BUDGET WAS HELD OPEN FOR HAS ARRIVED (backend#2731).
+          # THE MEASUREMENT THAT BUDGET WAS HELD OPEN FOR HAS ARRIVED ((internal ref)).
           # The previous note kept the retry budget at 5 x 5s on purpose -- "widening
           # it would hide how often the race is actually lost, and the point of
           # failing closed is to find that out." The answer came back on 2026-08-27:
@@ -353,7 +360,7 @@ jobs:
           echo "→ PR #$PR_NUMBER → Status=$STATUS_NAME"
 
   # ------------------------------------------------------------------------
-  # A PR whose TITLE names a ticket must LINK it (tracebloc/backend#2364).
+  # A PR whose TITLE names a ticket must LINK it ((internal ref)).
   #
   # Measured 2026-08-23: `closingIssuesReferences` was 0 on 7 of 7 epic-relevant
   # merged PRs. The house convention puts the ticket in the TITLE; GitHub creates
@@ -410,14 +417,14 @@ jobs:
           persist-credentials: false
 
       # WHY AN APP TOKEN AND NOT `github.token`. The link this reads points at an
-      # issue in ANOTHER repo -- `tracebloc/backend` for most of the fleet -- and
+      # issue in ANOTHER repo -- `(internal ref)` for most of the fleet -- and
       # a repo-scoped GITHUB_TOKEN cannot see it. A node the token cannot read
       # comes back missing from `nodes` while `totalCount` still counts it, which
       # the checker reports as "cannot tell" rather than "not linked". That is the
       # right refusal, but it would be EVERY cross-repo PR's verdict, so the
       # token has to be the org-scoped one.
       #
-      # SCOPED, unlike the mint in `set-status` above (backend#2157): this job
+      # SCOPED, unlike the mint in `set-status` above ((internal ref)): this job
       # reads two things and needs nothing else. `set-pr-status.yml` keeps its
       # `mint-scope` exemption for the unscoped board-write mint above; this mint
       # does not use it.
@@ -430,7 +437,7 @@ jobs:
           owner: ${{ github.repository_owner }}
           permission-pull-requests: read
           permission-issues: read
-          # NO `contents` scope, on purpose (backend#3240). The gate used to read
+          # NO `contents` scope, on purpose ((internal ref)). The gate used to read
           # `baseRepository { defaultBranchRef { name } }` over GraphQL; a Ref is
           # a contents object, world-readable on a public repo and gated on a
           # private one, and from 2026-09-06 06:29Z that single field made every

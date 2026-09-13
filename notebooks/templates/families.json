@@ -1,0 +1,164 @@
+{
+  "_comment": [
+    "The family-template pre-fill table, machine-readable. This file is the single",
+    "source for the numbers; scripts/check_templates.py asserts that each",
+    "template's settings cell actually sets these values, so the table and the",
+    "notebooks cannot drift apart.",
+    "",
+    "Two rules bind every row, both enforced by that checker:",
+    "  1. cycles * epochs <= 20 for any pre-fill.",
+    "  2. No family pre-fills epochs > 1 unless its aggregation strategy carries",
+    "     a drift correction. Plain FedAvg with many local epochs IS the",
+    "     client-drift setup.",
+    "No row currently pre-fills epochs > 1, so no row needs a drift correction.",
+    "cycles is what federates; epochs is what drifts.",
+    "",
+    "A family is VERIFIED when verification-dev.json records a COMPLETED",
+    "full-settings-cell run whose cycles/epochs match this file. A family that",
+    "is not must carry `unverified` naming the ticket that explains why; the",
+    "checker refuses a family that is neither. So changing a pre-fill here fails",
+    "the check until the dev run is redone and the evidence refreshed.",
+    "",
+    "`frameworks` is the set of frameworks the model zoo actually ships for this",
+    "family's categories, with the retired TensorFlow ones excluded. It matters",
+    "because the SDK forces cycles and epochs to 1 for the frameworks listed in",
+    "`single_pass_frameworks` -- by FRAMEWORK, for every category -- so a family",
+    "with such a pair cannot offer one cycles value to all of them. Measured: a",
+    "`cycles(15)` on a sklearn model prints \"cycles cannot be updated\" and sets 1.",
+    "Those families gate cycles/epochs on framework instead; the checker enforces it.",
+    "",
+    "`no_custom_loss_families` lists the families whose objective is INTRINSIC, so",
+    "a supplied loss.py is refused at upload rather than ignored at training. Only",
+    "embeddings: the SDK's NLP base hook documents itself as \"Base: every family",
+    "supports one -- no-op\" and embeddings alone overrides it to raise. Every other",
+    "template therefore carries a custom-loss cell; the checker enforces both",
+    "directions.",
+    "",
+    "`sdk_version_floor` is the oldest tracebloc release whose agreement with",
+    "`single_pass_frameworks` means anything. Measured: pip under an interpreter",
+    "the SDK's requires-python excludes backtracks silently to 0.8.1, which",
+    "predates these templates and whose _SURVIVAL_FRAMEWORKS matches by",
+    "coincidence -- so an ancient install 'confirmed' the mirror."
+  ],
+  "drift_correcting_strategies": [
+    "fedprox",
+    "fedadam",
+    "fedyogi",
+    "fedadagrad"
+  ],
+  "families": [
+    {
+      "key": "vision_from_scratch",
+      "title": "Vision, from scratch",
+      "template": "vision_from_scratch.ipynb",
+      "categories": [
+        "image_classification",
+        "object_detection",
+        "semantic_segmentation",
+        "keypoint_detection"
+      ],
+      "cycles": 20,
+      "epochs": 1,
+      "aggregation_strategy": "fedavg",
+      "rationale": "Twenty effective passes bought with rounds, not local epochs. From-scratch vision is where client drift bites hardest, so this row is the clearest case for spending the budget on cycles.",
+      "frameworks": [
+        "pytorch"
+      ]
+    },
+    {
+      "key": "nlp_finetune",
+      "title": "NLP fine-tune (incl. LoRA)",
+      "template": "nlp_finetune.ipynb",
+      "categories": [
+        "text_classification",
+        "sentence_pair_classification",
+        "token_classification"
+      ],
+      "cycles": 8,
+      "epochs": 1,
+      "aggregation_strategy": "fedavg",
+      "rationale": "A pretrained encoder needs few passes to fit a head; eight rounds leaves budget for a second and third experiment.",
+      "frameworks": [
+        "pytorch"
+      ]
+    },
+    {
+      "key": "nlp_generative",
+      "title": "NLP generative",
+      "template": "nlp_generative.ipynb",
+      "categories": [
+        "causal_language_modeling",
+        "seq2seq",
+        "masked_language_modeling"
+      ],
+      "cycles": 5,
+      "epochs": 1,
+      "aggregation_strategy": "fedavg",
+      "rationale": "Generative runs are the most expensive per pass, so the pre-fill is the most conservative of the language families.",
+      "frameworks": [
+        "pytorch"
+      ]
+    },
+    {
+      "key": "embeddings",
+      "title": "Embeddings",
+      "template": "embeddings.ipynb",
+      "categories": [
+        "embeddings"
+      ],
+      "cycles": 8,
+      "epochs": 1,
+      "aggregation_strategy": "fedavg",
+      "rationale": "Contrastive training benefits from more rounds of in-batch negatives rather than more local epochs over the same batches.",
+      "frameworks": [
+        "pytorch"
+      ]
+    },
+    {
+      "key": "tabular_timeseries",
+      "title": "Tabular / time series",
+      "template": "tabular_timeseries.ipynb",
+      "categories": [
+        "tabular_classification",
+        "tabular_regression",
+        "time_series_classification",
+        "time_series_forecasting"
+      ],
+      "cycles": 15,
+      "epochs": 1,
+      "aggregation_strategy": "fedavg",
+      "rationale": "Cheap passes over small feature tables; fifteen rounds still sits inside the twenty-pass ceiling.",
+      "frameworks": [
+        "pytorch",
+        "sklearn"
+      ]
+    },
+    {
+      "key": "survival",
+      "title": "Survival",
+      "template": "survival.ipynb",
+      "categories": [
+        "time_to_event_prediction"
+      ],
+      "cycles": 1,
+      "epochs": 1,
+      "aggregation_strategy": "fedavg",
+      "rationale": "The survival frameworks (sklearn, lifelines, scikit-survival) train in a single pass and the SDK forces epochs to 1 for them; the pre-fill matches that rather than fighting it.",
+      "unverified": "tracked internally: the dev time_to_event_prediction datasets carry time-like labels instead of a 0/1 event indicator",
+      "frameworks": [
+        "pytorch",
+        "lifelines",
+        "scikit_survival"
+      ]
+    }
+  ],
+  "single_pass_frameworks": [
+    "sklearn",
+    "lifelines",
+    "scikit_survival"
+  ],
+  "no_custom_loss_families": [
+    "embeddings"
+  ],
+  "sdk_version_floor": "1.0.7"
+}
