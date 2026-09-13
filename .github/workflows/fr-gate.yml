@@ -1,7 +1,7 @@
-# GENERATED FILE -- DO NOT EDIT BY HAND (tracebloc/backend#3591).
+# GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/fr-gate.yml`
-# (blob 948ea255acb8ea4e4d7a259fe16fec2855ddac32) folded with tracebloc/org-config's own caller of it,
+# (blob 97fcf6a3fb0bbb3ff46f3a3f2a9be7e471ae89ee) folded with tracebloc/org-config's own caller of it,
 # `.github/workflows/fr-gate-caller.yml` (blob b2e63da19a0d0369a7d7364b4596f53128f3c8ca), for a PUBLIC repo: GitHub lets a
 # public repo `uses:` a reusable workflow only from a public repo, and the
 # reusables live in the private tracebloc/org-config. So this file carries the
@@ -14,6 +14,13 @@
 # not change. Scripts are still fetched from org-config at run time with a
 # read-only App installation token; on a fork PR that token cannot be minted
 # (no secrets), so the checkout fails closed rather than running untrusted input.
+#
+# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
+# no internal references: each one was replaced with `(internal ref)` by the
+# one definition in scripts/public_surface.py (private-repo issue references,
+# private repo names, RFC ids, tenant names). A reference anywhere outside a
+# comment refuses the render instead of being edited -- it is a defect in the
+# source, not a scrub target.
 #
 # Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
 # Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
@@ -96,7 +103,7 @@ jobs:
         run: |
           # Manual promotion PRs bypass the release train's Bugbot soft-gate,
           # its tagging, and its run records — and indirect-merge the train's
-          # own PRs (backend#1336 / averaging-service, 2026-07-29). Promotions
+          # own PRs ((internal ref) / averaging-service, 2026-07-29). Promotions
           # into staging/main/master are the train's job. Sanctioned lanes:
           #   release-train/*       the train's own mirror PRs
           #   hotfix-backmerge/*    hotfix.yml's automated back-merges
@@ -108,7 +115,7 @@ jobs:
           if echo "$LABELS" | grep -q '"hotfix"'; then
             exit 0
           fi
-          echo "::error::Manual promotion PRs are retired — promotions into this branch go through the release train (tracebloc/release-train → Actions → 'Release train'). For a single-repo emergency prod fix use the 'hotfix' label; 'skip-fr-gate' remains the audited full override."
+          echo "::error::Manual promotion PRs are retired — promotions into this branch go through the org's release train (a maintainer dispatches its 'Release train' workflow). For a single-repo emergency prod fix use the 'hotfix' label; 'skip-fr-gate' remains the audited full override."
           exit 1
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -117,7 +124,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      # THE WALK LIVES HERE, NOT IN THE CALLING REPO (backend#3323, RFC-0075 D6).
+      # THE WALK LIVES HERE, NOT IN THE CALLING REPO ((internal ref), (internal ref) D6).
       # The two steps below used to carry it inline; the release train needs the
       # same walk to cut the prod hop at the FR frontier, and a second copy in
       # release-train is the drift rule 9 forbids. So the script is checked out
@@ -150,7 +157,7 @@ jobs:
           path: .fr-gate-tools
           persist-credentials: false
 
-      # Authenticates as the tracebloc-release-train App (backend#2036) instead of a
+      # Authenticates as the tracebloc-release-train App ((internal ref)) instead of a
       # human's PAT. `owner:` yields an ORG-scoped installation token, which this gate
       # needs: it reads the org PROJECT, and a repo-scoped token cannot.
       #
@@ -172,7 +179,7 @@ jobs:
           app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
           private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          # THREE READS AND NOTHING ELSE (backend#2157). Without these it minted
+          # THREE READS AND NOTHING ELSE ((internal ref)). Without these it minted
           # the App's whole set -- contents:write, issues:write,
           # organization_projects:write, administration:read -- across every repo
           # the installation covers, to run a gate that writes nothing at all.
