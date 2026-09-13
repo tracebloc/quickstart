@@ -6,14 +6,23 @@
 # compares a public repo's copy against THIS file and a private repo's
 # against the original.
 #
-# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
-# no internal references: each one was replaced with `(internal ref)` by the
-# one definition in scripts/public_surface.py (private-repo issue references,
-# private repo names, RFC ids, tenant names). A reference anywhere outside a
-# comment refuses the render instead of being edited -- it is a defect in the
-# source, not a scrub target.
+# PUBLIC SURFACE. This file is delivered to a public repo. Exactly what was
+# scrubbed, and what was not:
 #
-# Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
+#   * COMMENT TEXT -- a whole-line YAML `#` comment, a `#`-first line of a `run:`
+#     script that is not inside a heredoc, and this header -- was scrubbed: every
+#     private-repo issue reference, org-qualified private repo name, RFC id and
+#     tenant name became `(internal ref)`, and the private repo this file was
+#     generated from became `the private source repo`.
+#   * CODE -- everything else: commands, heredoc bodies, strings a workflow posts,
+#     `repository:` values, URLs, step names -- was NOT edited. An internal
+#     reference there refuses the render (it is a defect in the source), with one
+#     exception: the name of the private repo this file was generated from, which
+#     the code states verbatim because the workflow checks that repo out and
+#     fetches its scripts from it at run time. Its bare, unqualified name is not
+#     scrubbed anywhere.
+#
+# Regenerate:  python3 scripts/render-self-contained.py          (in the private source repo)
 # Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
 
 name: Add to engineer kanban
