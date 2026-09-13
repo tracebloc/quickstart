@@ -1,4 +1,4 @@
-# GENERATED FILE -- DO NOT EDIT BY HAND (tracebloc/backend#3591).
+# GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/stale-backlog.yml`
 # (blob bcb6d3bf15af1d8b1c422f5173d5a6c1b21860a6) folded with tracebloc/org-config's own caller of it,
@@ -15,6 +15,13 @@
 # read-only App installation token; on a fork PR that token cannot be minted
 # (no secrets), so the checkout fails closed rather than running untrusted input.
 #
+# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
+# no internal references: each one was replaced with `(internal ref)` by the
+# one definition in scripts/public_surface.py (private-repo issue references,
+# private repo names, RFC ids, tenant names). A reference anywhere outside a
+# comment refuses the render instead of being edited -- it is a defect in the
+# source, not a scrub target.
+#
 # Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
 # Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
 #
@@ -24,7 +31,7 @@
 name: Close stale backlog issues
 
 # REUSABLE, and it had to become one before the bug could be fixed
-# (backend#1979 → backend#1597 item 1).
+# ((internal ref) → (internal ref) item 1).
 #
 # THE BUG: `actions/stale` exempts on LABELS ONLY. It has no concept of the board,
 # so an item in `North Stars`, `Ready for prod` or `In progress` went stale and
@@ -79,13 +86,13 @@ jobs:
     timeout-minutes: 15
     steps:
       # The board read needs org-project access and the writes need issues:write,
-      # both of which the tracebloc-release-train App holds (backend#2036). This
+      # both of which the tracebloc-release-train App holds ((internal ref)). This
       # workflow is App-native from the start and never had a PAT to migrate off.
       # `owner:` makes the token ORG-scoped; a repo-scoped one cannot read the
       # project at all, and this sweep would then skip every issue as UNKNOWN —
       # silent and safe, but wrong.
       #
-      # SCOPED FROM THE START (backend#2157), derived from what the sweep actually
+      # SCOPED FROM THE START ((internal ref)), derived from what the sweep actually
       # calls rather than from what the App happens to hold:
       #
       #   issues: write               `issue edit --add-label`, `issue comment`,
@@ -94,7 +101,7 @@ jobs:
       #                              sweep never writes a board field
       #
       # No `pull-requests` — this workflow does not touch PRs, by design
-      # (backend#1408: it sweeps issues only). No `contents` — the App token is used
+      # ((internal ref): it sweeps issues only). No `contents` — the App token is used
       # ONLY as `GH_TOKEN` for the sweep; the `.github` checkout below uses the
       # workflow token and `persist-credentials: false`.
       #
@@ -104,7 +111,7 @@ jobs:
       # while only ever closing in one.
       #
       # ORG PROJECTS IS UNAFFECTED BY REPO SCOPING -- measured, not assumed:
-      # backend#2181's verification run (32255581084) wrote the org project with
+      # (internal ref)'s verification run (32255581084) wrote the org project with
       # `repositories:` set. That was the load-bearing unknown and it is settled.
       - name: Mint an installation token
         id: app-token
