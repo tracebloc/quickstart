@@ -1,4 +1,4 @@
-# GENERATED FILE -- DO NOT EDIT BY HAND (tracebloc/backend#3591).
+# GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/bugbot-gate.yml`
 # (blob c526c0a1f25316f429afbadb00ae1eaa4d0807bc) folded with tracebloc/org-config's own caller of it,
@@ -15,6 +15,13 @@
 # read-only App installation token; on a fork PR that token cannot be minted
 # (no secrets), so the checkout fails closed rather than running untrusted input.
 #
+# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
+# no internal references: each one was replaced with `(internal ref)` by the
+# one definition in scripts/public_surface.py (private-repo issue references,
+# private repo names, RFC ids, tenant names). A reference anywhere outside a
+# comment refuses the render instead of being edited -- it is a defect in the
+# source, not a scrub target.
+#
 # Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
 # Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
 #
@@ -24,7 +31,7 @@
 name: Bugbot review gate
 
 # Reusable workflow. Makes Cursor Bugbot's review a GATE instead of advice
-# (tracebloc/backend#2284). `scripts/bugbot-gate.py` carries the measurements and
+# ((internal ref)). `scripts/bugbot-gate.py` carries the measurements and
 # the reasoning; this file is the wiring, and only says what the script cannot.
 #
 # THE SHORT VERSION OF WHY THIS IS NOT "ADD `Cursor Bugbot` TO THE REQUIRED
@@ -38,7 +45,7 @@ name: Bugbot review gate
 #     a finding, because Bugbot re-runs only on a push or an explicit
 #     `bugbot run`, so resolving a finding can never turn the check green again
 #     -- and a promotion PR may not be pushed to at all. client#786 and
-#     frontend-app#863 both merged to `main` on 2026-08-21 carrying exactly that
+#     (internal ref) both merged to `main` on 2026-08-21 carrying exactly that
 #     state (`neutral` on the merged head, one resolved Medium beneath).
 #
 # So the verdict is REPORTED here and the decision is derived from the threads.
@@ -46,18 +53,18 @@ name: Bugbot review gate
 # ARMING THIS IS THREE STEPS, IN THIS ORDER, AND THE ORDER IS THE POINT.
 #
 #   1. this file reaches `main`. Every caller in this org pins
-#      `tracebloc/.github/...@main` (RFC-BACKEND-1405 Q3), so a caller added
+#      `tracebloc/.github/...@main` ((internal ref) Q3), so a caller added
 #      before the reusable is ON main references something main does not have and
 #      dies with a `startup_failure` -- a red check on the very PR introducing a
 #      gate. code-quality-caller.yml records the identical sequencing for its
 #      `action-pins` input: the job went to develop in #159 and was armed only
 #      once `main` carried it. That is why the PR adding THIS file adds no caller.
 #   2. a caller is added, starting with tracebloc/.github itself. The gate is
-#      ADVICE at this point, and saying so plainly is the whole of backend#2284.
+#      ADVICE at this point, and saying so plainly is the whole of (internal ref).
 #   3. the `bugbot / review` context is added to branch protection, once step 2
 #      has been observed green on real PRs.
 #
-# Never the reverse. backend#1976's lesson is that a contract claiming a context
+# Never the reverse. (internal ref)'s lesson is that a contract claiming a context
 # reality lacks is itself a finding; and a required context no workflow reports
 # leaves every PR waiting forever (client#665, pii-gate/pii-check). Arm while
 # green, then let the contract claim it.
@@ -91,7 +98,7 @@ name: Bugbot review gate
 # The consequence is written into the failure message rather than left to be
 # discovered: resolve the thread, then RE-RUN this check. Not "push a commit",
 # which is what a stale gate otherwise teaches. Adding the trigger when
-# actionlint learns the event is a follow-up on backend#2284.
+# actionlint learns the event is a follow-up on (internal ref).
 #
 # THIS JOB WAITS, on purpose. Its central claim is that Bugbot reviewed the
 # CURRENT head, which is false for the first minutes after every push -- so it
@@ -166,7 +173,7 @@ jobs:
         env:
           # `github.token`, not `secrets.inherit`: this needs only the scopes
           # declared above, and inheriting would hand it every secret the caller
-          # holds for no gain (RFC-BACKEND-1405 Q5).
+          # holds for no gain ((internal ref) Q5).
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
