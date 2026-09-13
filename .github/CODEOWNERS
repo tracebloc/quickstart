@@ -1,6 +1,9 @@
 # Code review is automated: the dedicated review account is requested on every
 # pull request the moment it opens, and a review from it satisfies the
-# required approving review. Path rules below add it beside any existing
-# owner rather than replacing them (the last matching rule wins in CODEOWNERS).
+# required approving review. This repo had no CODEOWNERS before this file
+# (author-picks-reviewer; the human reviewer is still requested by hand).
+# If a path ever needs a specific human owner, add that path AND keep the
+# account on the line: the last matching rule wins in CODEOWNERS, so a bare
+# path rule would drop it.
 
 * @tracebloc-review
