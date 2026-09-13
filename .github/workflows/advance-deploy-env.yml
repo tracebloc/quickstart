@@ -1,28 +1,37 @@
 # GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/advance-deploy-env.yml`
-# (blob 3656a2eaa46555c157af7f713ec7d25f56aa487f) folded with tracebloc/org-config's own caller of it,
+# (blob f8b068ecc1001349728eef16fd1ec1b09ab99fc5) folded with the private source repo's own caller of it,
 # `.github/workflows/advance-deploy-env-caller.yml` (blob a4796127e8f8ed55464d9bc51b2271a05638712e), for a PUBLIC repo: GitHub lets a
 # public repo `uses:` a reusable workflow only from a public repo, and the
-# reusables live in the private tracebloc/org-config. So this file carries the
+# reusables live in the private source repo. So this file carries the
 # reusable's jobs inline -- the triggers are the caller's; every `inputs.*` is
 # resolved to a literal (repo-inventory.yml's `caller_inputs` floor, else the
 # reusable's default -- the caller's own toolchain choices are NOT copied); the
 # App-token secrets are named directly; a job whose condition resolves to a
 # constant false is omitted; and each job's display name keeps the
 # `advance / ` prefix so the check contexts branch protection requires do
-# not change. Scripts are still fetched from org-config at run time with a
+# not change. Scripts are still fetched from the private source repo at run time with a
 # read-only App installation token; on a fork PR that token cannot be minted
 # (no secrets), so the checkout fails closed rather than running untrusted input.
 #
-# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
-# no internal references: each one was replaced with `(internal ref)` by the
-# one definition in scripts/public_surface.py (private-repo issue references,
-# private repo names, RFC ids, tenant names). A reference anywhere outside a
-# comment refuses the render instead of being edited -- it is a defect in the
-# source, not a scrub target.
+# PUBLIC SURFACE. This file is delivered to a public repo. Exactly what was
+# scrubbed, and what was not:
 #
-# Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
+#   * COMMENT TEXT -- a whole-line YAML `#` comment, a `#`-first line of a `run:`
+#     script that is not inside a heredoc, and this header -- was scrubbed: every
+#     private-repo issue reference, org-qualified private repo name, RFC id and
+#     tenant name became `(internal ref)`, and the private repo this file was
+#     generated from became `the private source repo`.
+#   * CODE -- everything else: commands, heredoc bodies, strings a workflow posts,
+#     `repository:` values, URLs, step names -- was NOT edited. An internal
+#     reference there refuses the render (it is a defect in the source), with one
+#     exception: the name of the private repo this file was generated from, which
+#     the code states verbatim because the workflow checks that repo out and
+#     fetches its scripts from it at run time. Its bare, unqualified name is not
+#     scrubbed anywhere.
+#
+# Regenerate:  python3 scripts/render-self-contained.py          (in the private source repo)
 # Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
 #
 # The comments below are the reusable's own and describe the reusable; where
@@ -81,7 +90,7 @@ jobs:
     # ~50 recent PRs' kanban items — e.g. every time a new `staging` branch is
     # cut for a repo ((internal ref) D8/#1274). Skip create/delete pushes.
     if: github.event.created != true && github.event.deleted != true
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -271,6 +280,30 @@ jobs:
           set -euo pipefail
           REPO_NAME="${REPO_FULL#*/}"
 
+          # selftest:graphql-read-start  (byte-identical in every workflow that carries it)
+          # THE BODY DECIDES WHETHER A GraphQL READ SUCCEEDED, never the exit code
+          # alone. An HTTP 200 whose body carries `errors[]` (rate limit, partial
+          # payload, a NOT_FOUND on a sub-field) fed straight into `.data...nodes[]?`
+          # produces NOTHING, and nothing read as "not on the project" -- so the
+          # Item-closed automation could write Cancelled over shipped work
+          # (Bugbot on quickstart#5, (internal ref)). Empty and non-object bodies are
+          # refused for the same reason: a search over nothing finds nothing, and
+          # "found nothing" must never mean "absent". This function never
+          # whitelists an error type; the one benign NOT_FOUND is the caller's call.
+          #   $1  the raw payload   $2  what was being read (prefixes the message)
+          reject_graphql_errors() {
+            if ! jq -e 'type == "object"' >/dev/null 2>&1 <<< "$1"; then
+              echo "::error::$2: the response was not readable JSON (empty, truncated or not an object), so it cannot be shown to be error-free -- UNREADABLE, not absent" >&2
+              return 1
+            fi
+            if jq -e 'has("errors")' <<< "$1" >/dev/null 2>&1; then
+              echo "::error::$2: the response carries GraphQL errors[] ($(jq -r '[.errors[]? | ((.type // "?") + ": " + (.message // "?"))] | join("; ")' <<< "$1")) -- UNREADABLE, not absent" >&2
+              return 1
+            fi
+            return 0
+          }
+          # selftest:graphql-read-end
+
           # Look up project ID + relevant field/option IDs (one query)
           # shellcheck disable=SC2016  # the $names here are GraphQL variables, not shell - keep literal
           PROJ=$(gh api graphql -f query='
@@ -286,6 +319,7 @@ jobs:
                 }
               }
             }' -F org="$ORG" -F num="$PROJECT_NUMBER")
+          reject_graphql_errors "$PROJ" "project #$PROJECT_NUMBER field read" || exit 1
 
           PROJECT_ID=$(echo "$PROJ" | jq -r '.data.organization.projectV2.id')
           DEPLOY_FIELD=$(echo "$PROJ" | jq -r '.data.organization.projectV2.fields.nodes[]
@@ -392,20 +426,30 @@ jobs:
           LOOKUP_FAILED=0
           LOOKUP_ERRF=$(mktemp)
           update_field() {   # $1=fieldId  $2=optionId  $3=human label
-            local err
+            local err body
             if [ "${DRY_RUN:-false}" = "true" ]; then
               echo "[DRY] would set $3 on item $ITEM_ID"
               return 0
             fi
+            # THE WRITE'S BODY IS READ TOO. An exit-0 mutation response carrying
+            # errors[] (a stale option id, a permission edge, a partial payload)
+            # means the field was NOT written; the exit code alone would have
+            # called that a success and left the step green. Same function, same
+            # rule as the reads above.
             # shellcheck disable=SC2016  # the $names here are GraphQL variables, not shell - keep literal
-            if err=$(gh api graphql -f query='
+            if body=$(gh api graphql -f query='
               mutation($p: ID!, $i: ID!, $f: ID!, $o: String!) {
                 updateProjectV2ItemFieldValue(input: {
                   projectId: $p, itemId: $i, fieldId: $f,
                   value: {singleSelectOptionId: $o}
                 }) { projectV2Item { id } }
-              }' -F p="$PROJECT_ID" -F i="$ITEM_ID" -F f="$1" -f o="$2" 2>&1 >/dev/null); then
-              return 0
+              }' -F p="$PROJECT_ID" -F i="$ITEM_ID" -F f="$1" -f o="$2" 2>&1); then
+              if err=$(reject_graphql_errors "$body" "#$prnum $3 write" 2>&1); then
+                return 0
+              fi
+              err="${err#::error::}"
+            else
+              err="$body"
             fi
             echo "::warning::#$prnum $3 update failed: $err"
             RUN_FAILED=1
@@ -420,17 +464,26 @@ jobs:
             # its shipped code, in a run that stayed GREEN (Bugbot, (internal ref)).
             # A read that failed is a could-not-tell and is recorded as one.
             #
-            # `gh api graphql` exits 1 for a GraphQL-level error too, and ONE of
-            # those is benign: a number that is not a pull request (the extract
-            # step falls back to the commit subject's `(#N)`, which can name an
-            # issue) comes back as `errors[].type == "NOT_FOUND"` with the body
-            # still on stdout. That -- and only that -- is a quiet skip, the same
-            # answer the removed closing-issue loop gave (.github#181). Anything
-            # else is a failed read: `errors` of any other type, an HTTP error body
-            # with no `errors` at all, or no body -- the classification is
-            # whitelist, so an unfamiliar shape fails closed.
+            # THE BODY DECIDES, WHATEVER THE EXIT CODE ((internal ref)). `gh api
+            # graphql` happens to exit 1 on a GraphQL-level error today, and the
+            # first version of this leaned on that: only a non-zero exit was
+            # classified, so an exit-0 body carrying `errors[]` (rate limit,
+            # partial payload) fell through to the item search below, found
+            # nothing, and read as "not on project". The response is now read the
+            # same way at exit 0 and at exit 1. ONE shape is benign: a number
+            # that is not a pull request (the extract step falls back to the
+            # commit subject's `(#N)`, which can name an issue) comes back as a
+            # NOT_FOUND on exactly `repository.pullRequest`. That -- and only
+            # that -- is a quiet skip, the same answer the removed closing-issue
+            # loop gave (.github#181). Everything else is a failed read: gh
+            # exiting non-zero, `errors[]` of any other type or path (a NOT_FOUND
+            # on the repository itself is a misconfiguration, not an issue
+            # number), an HTTP error body with no `errors` at all, an empty or
+            # non-JSON body -- the classification is whitelist, so an unfamiliar
+            # shape fails closed.
+            LOOKUP_RC=0
             # shellcheck disable=SC2016  # the $names here are GraphQL variables, not shell - keep literal
-            if ! RESP=$(gh api graphql -f query='
+            RESP=$(gh api graphql -f query='
               query($org: String!, $repo: String!, $num: Int!) {
                 repository(owner: $org, name: $repo) {
                   pullRequest(number: $num) {
@@ -444,12 +497,13 @@ jobs:
                     }
                   }
                 }
-              }' -F org="$ORG" -F repo="$REPO_NAME" -F num="$prnum" 2>"$LOOKUP_ERRF"); then
-              LOOKUP_ERR=$(tr '\n' ' ' <"$LOOKUP_ERRF")
-              if jq -e '(.errors // []) | length > 0 and all(.type == "NOT_FOUND")' <<<"$RESP" >/dev/null 2>&1; then
-                echo "::notice::#$prnum is not a pull request in $REPO_FULL (NOT_FOUND) -- skipping"
-                continue
-              fi
+              }' -F org="$ORG" -F repo="$REPO_NAME" -F num="$prnum" 2>"$LOOKUP_ERRF") || LOOKUP_RC=$?
+            if jq -e '(.errors // []) | length > 0 and all(.type == "NOT_FOUND" and .path == ["repository", "pullRequest"])' <<<"$RESP" >/dev/null 2>&1; then
+              echo "::notice::#$prnum is not a pull request in $REPO_FULL (NOT_FOUND) -- skipping"
+              continue
+            fi
+            if [ "$LOOKUP_RC" -ne 0 ] || ! reject_graphql_errors "$RESP" "#$prnum project-item lookup" 2>>"$LOOKUP_ERRF"; then
+              LOOKUP_ERR=$(sed 's/^::error:://' "$LOOKUP_ERRF" | tr '\n' ' ')
               echo "::error::#$prnum project-item lookup FAILED -- its board state is UNKNOWN, not absent, and the card was NOT advanced: ${LOOKUP_ERR:-gh exited non-zero with no message}"
               LOOKUP_FAILED=$((LOOKUP_FAILED + 1))
               continue
