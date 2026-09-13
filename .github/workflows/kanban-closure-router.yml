@@ -1,28 +1,37 @@
 # GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/kanban-closure-router.yml`
-# (blob fa2c75bfff00979330c8f5d42d9147d0da739acc) folded with tracebloc/org-config's own caller of it,
+# (blob 71ff0979b11f4fd8eee8fd3a27649bd49dffed3c) folded with the private source repo's own caller of it,
 # `.github/workflows/kanban-closure-caller.yml` (blob e78122f771274190cbfcc450ccfce7ada2ff077a), for a PUBLIC repo: GitHub lets a
 # public repo `uses:` a reusable workflow only from a public repo, and the
-# reusables live in the private tracebloc/org-config. So this file carries the
+# reusables live in the private source repo. So this file carries the
 # reusable's jobs inline -- the triggers are the caller's; every `inputs.*` is
 # resolved to a literal (repo-inventory.yml's `caller_inputs` floor, else the
 # reusable's default -- the caller's own toolchain choices are NOT copied); the
 # App-token secrets are named directly; a job whose condition resolves to a
 # constant false is omitted; and each job's display name keeps the
 # `route / ` prefix so the check contexts branch protection requires do
-# not change. Scripts are still fetched from org-config at run time with a
+# not change. Scripts are still fetched from the private source repo at run time with a
 # read-only App installation token; on a fork PR that token cannot be minted
 # (no secrets), so the checkout fails closed rather than running untrusted input.
 #
-# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
-# no internal references: each one was replaced with `(internal ref)` by the
-# one definition in scripts/public_surface.py (private-repo issue references,
-# private repo names, RFC ids, tenant names). A reference anywhere outside a
-# comment refuses the render instead of being edited -- it is a defect in the
-# source, not a scrub target.
+# PUBLIC SURFACE. This file is delivered to a public repo. Exactly what was
+# scrubbed, and what was not:
 #
-# Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
+#   * COMMENT TEXT -- a whole-line YAML `#` comment, a `#`-first line of a `run:`
+#     script that is not inside a heredoc, and this header -- was scrubbed: every
+#     private-repo issue reference, org-qualified private repo name, RFC id and
+#     tenant name became `(internal ref)`, and the private repo this file was
+#     generated from became `the private source repo`.
+#   * CODE -- everything else: commands, heredoc bodies, strings a workflow posts,
+#     `repository:` values, URLs, step names -- was NOT edited. An internal
+#     reference there refuses the render (it is a defect in the source), with one
+#     exception: the name of the private repo this file was generated from, which
+#     the code states verbatim because the workflow checks that repo out and
+#     fetches its scripts from it at run time. Its bare, unqualified name is not
+#     scrubbed anywhere.
+#
+# Regenerate:  python3 scripts/render-self-contained.py          (in the private source repo)
 # Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
 #
 # The comments below are the reusable's own and describe the reusable; where
@@ -57,7 +66,7 @@ on:
 jobs:
   route:
     name: route / route
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       # The mapping comes from .github, not from a copy in this file: one
       # definition of branch -> Status ((internal ref)).
@@ -338,6 +347,30 @@ jobs:
           set -euo pipefail
           REPO_NAME="${REPO_FULL#*/}"
 
+          # selftest:graphql-read-start  (byte-identical in every workflow that carries it)
+          # THE BODY DECIDES WHETHER A GraphQL READ SUCCEEDED, never the exit code
+          # alone. An HTTP 200 whose body carries `errors[]` (rate limit, partial
+          # payload, a NOT_FOUND on a sub-field) fed straight into `.data...nodes[]?`
+          # produces NOTHING, and nothing read as "not on the project" -- so the
+          # Item-closed automation could write Cancelled over shipped work
+          # (Bugbot on quickstart#5, (internal ref)). Empty and non-object bodies are
+          # refused for the same reason: a search over nothing finds nothing, and
+          # "found nothing" must never mean "absent". This function never
+          # whitelists an error type; the one benign NOT_FOUND is the caller's call.
+          #   $1  the raw payload   $2  what was being read (prefixes the message)
+          reject_graphql_errors() {
+            if ! jq -e 'type == "object"' >/dev/null 2>&1 <<< "$1"; then
+              echo "::error::$2: the response was not readable JSON (empty, truncated or not an object), so it cannot be shown to be error-free -- UNREADABLE, not absent" >&2
+              return 1
+            fi
+            if jq -e 'has("errors")' <<< "$1" >/dev/null 2>&1; then
+              echo "::error::$2: the response carries GraphQL errors[] ($(jq -r '[.errors[]? | ((.type // "?") + ": " + (.message // "?"))] | join("; ")' <<< "$1")) -- UNREADABLE, not absent" >&2
+              return 1
+            fi
+            return 0
+          }
+          # selftest:graphql-read-end
+
           # Look up project ID + Status field/option IDs
           # shellcheck disable=SC2016  # the $names here are GraphQL variables, not shell - keep literal
           PROJ=$(gh api graphql -f query='
@@ -353,6 +386,7 @@ jobs:
                 }
               }
             }' -F org="$ORG" -F num="$PROJECT_NUMBER")
+          reject_graphql_errors "$PROJ" "project #$PROJECT_NUMBER field read" || exit 1
 
           PROJECT_ID=$(echo "$PROJ" | jq -r '.data.organization.projectV2.id')
           STATUS_FIELD=$(echo "$PROJ" | jq -r '.data.organization.projectV2.fields.nodes[]
@@ -386,13 +420,19 @@ jobs:
           LOOKUP_ERR=""
           for i in 1 2 3 4 5; do
             LOOKUP_ERR=""
+            # THE BODY DECIDES, WHATEVER THE EXIT CODE ((internal ref)): an exit-0
+            # response carrying `errors[]`, or no JSON object at all, is a failed
+            # attempt exactly like a non-zero exit -- retried, and remembered.
+            # Without the second clause the errors payload fed the item search
+            # below, found nothing, and after five reads was "not on project".
             if ! RESP=$(gh api graphql -f query="
               query(\$org: String!, \$repo: String!, \$num: Int!) {
                 repository(owner: \$org, name: \$repo) {
                   $FIELD_QUERY
                 }
-              }" -F org="$ORG" -F repo="$REPO_NAME" -F num="$NUMBER" 2>"$LOOKUP_ERRF"); then
-              LOOKUP_ERR=$(tr '\n' ' ' <"$LOOKUP_ERRF")
+              }" -F org="$ORG" -F repo="$REPO_NAME" -F num="$NUMBER" 2>"$LOOKUP_ERRF") \
+               || ! reject_graphql_errors "$RESP" "#$NUMBER project-item lookup" 2>>"$LOOKUP_ERRF"; then
+              LOOKUP_ERR=$(sed 's/^::error:://' "$LOOKUP_ERRF" | tr '\n' ' ')
               LOOKUP_ERR="${LOOKUP_ERR:-gh exited non-zero with no message}"
               echo "::warning::#$NUMBER project-item lookup failed (attempt $i/5): $LOOKUP_ERR"
               ITEM_ID=""; CURRENT_COL=""
@@ -511,7 +551,7 @@ jobs:
               # belonged in Done -- so no default is correct and only the person
               # closing it knows which.
                 CLOSE_NOTE="Closed while the board still shows \`$CURRENT_COL\`, which records a deployment."
-                CLOSE_NOTE="$CLOSE_NOTE The automation will not overwrite a deploy state with \`Done\`,"
+                CLOSE_NOTE="$CLOSE_NOTE The automation will not overwrite a deploy state with \`Done\` -- a standing board rule, not a glitch --"
                 CLOSE_NOTE="$CLOSE_NOTE so this card stays where it is until someone says which happened:"
                 CLOSE_NOTE="$CLOSE_NOTE **it shipped** - move the card to the column it reached (\`Prod\` if it is in production);"
                 CLOSE_NOTE="$CLOSE_NOTE **nothing was deployed** (reverted, abandoned, superseded) - clear the deploy state, then \`Done\`."
@@ -522,14 +562,20 @@ jobs:
             fi
           fi
 
+          # THE WRITE'S BODY IS READ TOO: an exit-0 response carrying errors[] means
+          # the Status was NOT written, and falling through to the success line
+          # below would record a move that never happened. Same function as the
+          # reads above; a refusal is a failed write, so the step goes red.
           # shellcheck disable=SC2016  # the $names here are GraphQL variables, not shell - keep literal
-          gh api graphql -f query='
+          WRESP=$(gh api graphql -f query='
             mutation($p: ID!, $i: ID!, $f: ID!, $o: String!) {
               updateProjectV2ItemFieldValue(input: {
                 projectId: $p, itemId: $i, fieldId: $f,
                 value: {singleSelectOptionId: $o}
               }) { projectV2Item { id } }
-            }' -f p="$PROJECT_ID" -f i="$ITEM_ID" -f f="$STATUS_FIELD" -f o="$STATUS_OPT" > /dev/null
+            }' -f p="$PROJECT_ID" -f i="$ITEM_ID" -f f="$STATUS_FIELD" -f o="$STATUS_OPT" 2>&1) \
+            || { echo "::error::#$NUMBER Status=$STATUS_NAME write failed: $WRESP" >&2; exit 1; }
+          reject_graphql_errors "$WRESP" "#$NUMBER Status=$STATUS_NAME write" || exit 1
 
           echo "→ #$NUMBER → Status=$STATUS_NAME"
       - name: Label a card whose override could not be used
