@@ -1,3 +1,21 @@
+# GENERATED FILE -- DO NOT EDIT BY HAND.
+#
+# Public-safe copy of `.github/workflows/add-to-kanban.yml` (blob 2a3a432b3d01516575d5c57b9d0a1b2379db299d) for a PUBLIC repo:
+# the same workflow, byte for byte, except that its comments are scrubbed as
+# described below. Private repos carry the original; the conformance audit
+# compares a public repo's copy against THIS file and a private repo's
+# against the original.
+#
+# PUBLIC SURFACE. This file is delivered to a public repo, so its comments carry
+# no internal references: each one was replaced with `(internal ref)` by the
+# one definition in scripts/public_surface.py (private-repo issue references,
+# private repo names, RFC ids, tenant names). A reference anywhere outside a
+# comment refuses the render instead of being edited -- it is a defect in the
+# source, not a scrub target.
+#
+# Regenerate:  python3 scripts/render-self-contained.py          (in tracebloc/org-config)
+# Verify:      python3 scripts/render-self-contained.py --check  (make selftest-self-contained)
+
 name: Add to engineer kanban
 
 on:
@@ -15,7 +33,7 @@ jobs:
     # privilege story covers both credentials in the job rather than just the loud one.
     permissions: {}
     steps:
-      # Board writes authenticate as the tracebloc-release-train App (backend#2036),
+      # Board writes authenticate as the tracebloc-release-train App ((internal ref)),
       # not a human's PAT. `owner:` yields an ORG-scoped installation token; a
       # repo-scoped one cannot write the org project. No fallback to the PAT: a
       # fallback would let a broken App path keep working silently.
@@ -44,7 +62,7 @@ jobs:
           # comment. If it is wrong the failure is LOUD (see below), which is what
           # makes trying it cheap.
           repositories: ${{ github.event.repository.name }}
-          # Least privilege (backend#2166): without any `permission-*` the token
+          # Least privilege ((internal ref)): without any `permission-*` the token
           # carries the App's FULL installation grant. actions/add-to-project needs
           # THREE scopes, not one: it must RESOLVE the triggering issue/PR node
           # before it can add it to the board, so it needs read on both content
@@ -89,4 +107,3 @@ jobs:
         with:
           project-url: https://github.com/orgs/tracebloc/projects/2
           github-token: ${{ steps.app-token.outputs.token }}
-
