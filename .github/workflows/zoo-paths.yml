@@ -1,0 +1,69 @@
+name: Model-zoo paths
+
+# Binds this repo's notebooks to the model zoo they tell people to clone.
+#
+# quickstart#11: the guide's upload cell named
+# `image_classification/pytorch/densenet.py`, which the zoo had stopped
+# shipping. Nothing connected the two repos, so the guide's own default
+# raised FileNotFoundError for anyone running it top to bottom, and only a
+# human executing the notebook end to end found it. Fixing the path fixes
+# one instance; this job is what stops the class.
+#
+# `paths:` is deliberately ABSENT, for the same reason template-rules.yml
+# says so: a path filter would mean editing the checker itself skips the
+# job that runs it. It also would not help — the input that rots is in
+# ANOTHER REPOSITORY, so a run triggered only by changes here would go
+# green on the day the zoo drops a file. That is what the nightly
+# schedule below is for: the guide can break without a commit landing
+# anywhere in this repo.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches: [develop, staging, main]
+  schedule:
+    # 04:17 UTC, an arbitrary minute rather than the top of the hour where
+    # every scheduled job in the fleet queues at once.
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: zoo-paths-${{ github.workflow }}-${{ github.ref }}
+  # PR runs supersede each other; push and scheduled runs must not — a
+  # cancelled run leaves that commit with NO verdict, which reads the same
+  # as never having been checked.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  zoo-paths:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check out the model zoo beside this repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: tracebloc/model-zoo
+          path: model-zoo
+          # No `ref:`. The guide's clone cell runs a plain
+          # `git clone https://github.com/tracebloc/model-zoo.git`, which
+          # gets the DEFAULT branch — so this check follows that cell
+          # rather than a branch name written down here, which would
+          # silently stop matching the day the default moves.
+
+      - name: Mutation harness — every rule seen to FAIL
+        # Before the check, on purpose: the check passing says the tree is
+        # clean, the harness says the check can still fail. It is not
+        # theoretical here — the first version of the checker read the real
+        # tree while the harness mutated a copy, and four of its six rules
+        # came back MISSED. A checker that cannot fail is indistinguishable
+        # from one that always passes.
+        run: python3 scripts/check_zoo_paths.py --zoo model-zoo --self-test
+
+      - name: Every model-zoo path in the notebooks resolves
+        run: python3 scripts/check_zoo_paths.py --zoo model-zoo

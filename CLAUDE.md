@@ -4,6 +4,30 @@ Repo-specific guidance for Claude Code sessions goes here, above the
 managed org block: build/test commands, architecture notes, gotchas,
 and this repo's default reviewer. Rollout: (internal ref).
 
+## Checks
+
+Two checkers, each with its own workflow and its own mutation harness.
+Run both before pushing:
+
+```sh
+python3 scripts/check_templates.py                      # D9 template rules
+python3 scripts/check_zoo_paths.py --zoo ../model-zoo   # zoo paths resolve
+```
+
+`check_zoo_paths.py` is the cross-repo one: every `model_zoo/...` path
+this repo prints — the guide's table, its `MODEL_PATH` default, the
+README — must exist in a `model-zoo` checkout. It needs one beside this
+repo (`--clone` fetches it), and it **fails rather than skips** when it
+cannot find one. The guide's default `MODEL_PATH` pointed at a file the
+zoo had stopped shipping (#11) precisely because nothing connected the
+two repos; its input lives in another repository, which is why the
+workflow also runs nightly rather than only on this repo's commits.
+
+Both take `--self-test` / a `_mutations.py` sibling that mutates a copy
+of the tree and asserts every rule is SEEN to fail. Run it after editing
+a rule: a checker passing says the tree is clean, only a mutation says
+the checker can still fail.
+
 <!-- org-standards:begin -->
 ## tracebloc engineering standards (org-wide)
 
