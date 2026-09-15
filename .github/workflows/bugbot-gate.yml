@@ -112,7 +112,7 @@ name: Bugbot review gate
 # THIS JOB WAITS, on purpose. Its central claim is that Bugbot reviewed the
 # CURRENT head, which is false for the first minutes after every push -- so it
 # polls. Measured 2026-09-13 over the 160 most recent PR heads of five repos
-# (e2e-test-agent, backend, release-train, org-config, client-runtime), every
+# (all private; their names are withheld on this public surface), every
 # one of which carried a completed `Cursor Bugbot` run: Bugbot CLAIMS a head
 # (creates its check run) p50 10 s / p90 35 s / p95 65 s after the push, and
 # delivers the VERDICT p50 268 s / p75 381 s / p90 495 s / p95 577 s after it;
