@@ -1,8 +1,8 @@
 # GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/bugbot-gate.yml`
-# (blob e9a4e91e501f24f5f2f07d455eaef81f91e3423f) folded with the private source repo's own caller of it,
-# `.github/workflows/bugbot-gate-caller.yml` (blob f87fa0ed0dfd714ced846d5db9487f2bf9622cbe), for a PUBLIC repo: GitHub lets a
+# (blob 3db8e9695a2a0e364ae7fd10c7e001e0b430dbcb) folded with the private source repo's own caller of it,
+# `.github/workflows/bugbot-gate-caller.yml` (blob f95fddc037139521b1ce428400044192ad5a3991), for a PUBLIC repo: GitHub lets a
 # public repo `uses:` a reusable workflow only from a public repo, and the
 # reusables live in the private source repo. So this file carries the
 # reusable's jobs inline -- the triggers are the caller's; every `inputs.*` is
@@ -111,11 +111,72 @@ name: Bugbot review gate
 #
 # THIS JOB WAITS, on purpose. Its central claim is that Bugbot reviewed the
 # CURRENT head, which is false for the first minutes after every push -- so it
-# polls. Measured over 40 Bugbot runs: p50 164s, p90 332s, max 635s. The wait
-# runs concurrently with Bugbot's own work, so it adds latency only when Bugbot
-# is slower than usual. `timeout-minutes` is deliberately above the script's own
-# budget so the script reports WHY it gave up instead of the runner killing it
-# with no message.
+# polls. Measured 2026-09-13 over the 160 most recent PR heads of five repos
+# (all private; their names are withheld on this public surface), every
+# one of which carried a completed `Cursor Bugbot` run: Bugbot CLAIMS a head
+# (creates its check run) p50 10 s / p90 35 s / p95 65 s after the push, and
+# delivers the VERDICT p50 268 s / p75 381 s / p90 495 s / p95 577 s after it;
+# 3 of 160 took longer than 660 s (one at 846 s, and one head Bugbot was asked
+# to re-review by hand 2.5 h later). The wait runs concurrently with Bugbot's
+# own work, so it adds latency only when Bugbot is slower than usual.
+# `timeout-minutes` sits above the script's own budget so that the script, not
+# the runner, is what reports a timeout on all but the slowest runner setups
+# -- the job's `timeout-minutes` note below has the one measured exception.
+#
+# WHAT A RED AT THE DEADLINE MEANS, AND THE REMEDY ((internal ref)).
+# Because the claim lands within about a minute, a run whose wait expires almost
+# always finds a check that STARTED and has not finished: the script exits 1 --
+# the gate FAILS CLOSED on a CLAIMED-but-unfinished head. The one verdict-less
+# case it does NOT block is a head Bugbot never claimed at all: that exits 0 as
+# UNREVIEWED (three banners, not two; (internal ref) holds the open
+# decision on whether it should block), and the day step 3 above is taken that
+# exit code is a fail-open. So `bugbot / review` red on a head Bugbot is still reviewing
+# means "not yet", not "findings"; the remedy is **Re-run jobs** on THAT run
+# once Bugbot's check has completed. Re-run IN PLACE, never a fresh run: a
+# re-run replaces the check run on the head, while a second run of this job on
+# the same sha (a new event, a review-triggered run, a dispatch) ADDS a run
+# beside the red one -- and `statusCheckRollup.state` is worst-of across every
+# run on the commit (scripts/reusable-no-cancel.py, measured on .github#387),
+# which is what the PR's red X and ship.py's merge bar both read. A later
+# green run therefore does not clear an earlier red on the same head. That is
+# why the wait is sized to the TAIL and not the median: every deadline hit
+# costs somebody a re-run, and ship/desk read a red `bugbot / review` as fix
+# work before anything else.
+#
+# THE EVENT-DRIVEN SHAPE THIS DOES NOT TAKE, AND THE MEASUREMENTS THAT DECIDED
+# IT ((internal ref)). The runner sleeps through Bugbot's review; the
+# obvious saving is to evaluate on the event that ENDS the review instead of
+# polling for it. Both candidate events were measured on the same 160 heads:
+#
+#   * `pull_request_review: [submitted]` by `cursor[bot]` fired for 110 of the
+#     160 verdicts (69%). Bugbot submits a review when it has findings and
+#     usually a "found no new issues" review when clean -- but 40 clean heads
+#     and 10 `neutral` ones got a verdict and NO review at all. A gate that
+#     waited for that event would wait for ever on a third of pushes, and a
+#     `pull_request` run cut short at the median would leave those heads red
+#     with nothing coming to turn them green. Where the event does fire it
+#     lands p50 1 s BEFORE the check run completes and up to 193 s before it,
+#     so "evaluate immediately with wait 0" reads PENDING and goes red on the
+#     very event meant to settle it. And filtering the reviewer with a
+#     job-level `if:` leaves a SKIPPED `bugbot / review` on the head for every
+#     HUMAN review -- which GitHub counts as success for a required context, a
+#     fail-open path the day step 3 is taken. (The wiring itself is not the
+#     obstacle: a `pull_request_review` payload carries `pull_request`, so the
+#     `PR_NUMBER` read below already works from that event, and its
+#     `GITHUB_SHA` is the PR merge ref's like `pull_request`'s.)
+#   * `check_run: [completed]` for `Cursor Bugbot` fires for every verdict, but
+#     a `check_run`-triggered workflow runs the DEFAULT branch's file with
+#     `GITHUB_SHA` = the default branch's tip, so the job's own `bugbot /
+#     review` check lands on `develop`, not on the PR head, and neither the PR
+#     nor branch protection ever sees it. Reporting on the head from there
+#     means creating the check run by hand through the Checks API (`checks:
+#     write` on every caller; a check produced by the github-actions App, not
+#     by a job) -- a different gate, not a trigger change.
+#
+# Either way the tail cannot be handed to an event, and the wait cannot be
+# shortened without handing it to one (worst-of rollup, above). What is left
+# is the runner: this job now schedules on `ubuntu-slim`, which bills the same
+# minutes at a third of the rate and carries git, gh, Python 3.12 and Node 24.
 
 on:
   pull_request:
@@ -138,17 +199,34 @@ permissions:
 jobs:
   review:
     name: bugbot / review
-    # `ubuntu-latest` and not `ubuntu-slim` FOR NOW, on purpose: every short
-    # reusable in this repo moved to the slim tier together, and this one is
-    # sequenced behind an observed slim run of those because its job holds the
-    # runner longest (it polls) -- a scheduling pathology on the new label would
-    # cost the most here and be hardest to tell from a slow review.
-    # `scripts/runner-tier.py` holds it by name and says when to flip it.
-    runs-on: ubuntu-latest
-    # Above the script's own 660s budget on purpose: the script must be the thing
-    # that reports a timeout, with the measured latencies in the message. A
-    # runner-level kill produces no explanation at all.
-    timeout-minutes: 30
+    # `ubuntu-slim` ((internal ref)): this job produces no REQUIRED
+    # context anywhere -- 0 of 63 live branches (21 inventory repos x
+    # develop/staging/main, classic protection AND rulesets) name a bugbot
+    # context, measured 2026-09-13 -- so a label that failed to schedule could
+    # not hang a PR, only delay an advisory check. `scripts/runner-tier.py`
+    # derives the same answer from repo-inventory.yml and no longer holds this
+    # file on the full tier. The image carries everything the steps below need
+    # (git, gh, Python 3.12, Node 24); the first slim run after promotion to
+    # `main` is the proof that it schedules, and nothing about this file's
+    # behaviour changes with the label.
+    runs-on: ubuntu-slim
+    # Above the script's own 660 s budget on purpose: the script should be the
+    # thing that reports a timeout, with the measured latencies in the message
+    # -- a runner-level kill produces no explanation at all. Below the 15
+    # minutes `ubuntu-slim` allows a job, which is a hard platform cap, so the
+    # slack between the two is 180 s for mint + checkout + setup-python. That
+    # is NOT always enough, and this file does not claim it is: over the same
+    # 160 runs this job's duration was 628 s at the p99 and 869 s at the max --
+    # a deadline-hitting run carrying ~209 s of setup, which 840 s kills before
+    # the script speaks. So a run that is BOTH past the wait budget AND in
+    # roughly the top 1% of runner setup is runner-killed with no PENDING
+    # report; the PR's red X then carries no "re-run in place" instruction and
+    # the reader has to know the remedy from this file. The alternative -- a
+    # 600 s budget for 240 s of slack -- would turn 4.4% of heads red at the
+    # deadline instead of 1.9% (the `wait-seconds` description has the
+    # distribution), every one a human re-run, to save the message on a far
+    # rarer kill. The budget stays at 660 and this comment states the trade.
+    timeout-minutes: 14
     steps:
       # Same shape as code-quality.yml and blocked-gate.yml: the checker lives
       # here, not in the calling repo, so the reusable fetches it. This repo is
