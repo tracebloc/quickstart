@@ -1,7 +1,7 @@
 # GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/fr-pass-comment.yml`
-# (blob 09e03fdcead31bf0a43e7c9072c09e9a42971542) folded with the private source repo's own caller of it,
+# (blob 10490450100a90eb95801377246c6eb24843adc4) folded with the private source repo's own caller of it,
 # `.github/workflows/fr-pass-comment-caller.yml` (blob bc01ef34bf604788e80a0b19d31b8fe7edfaae15), for a PUBLIC repo: GitHub lets a
 # public repo `uses:` a reusable workflow only from a public repo, and the
 # reusables live in the private source repo. So this file carries the
@@ -204,6 +204,29 @@ jobs:
           BOARD_URL: ${{ github.server_url }}/orgs/${{ 'tracebloc' }}/projects/${{ 2 }}
         run: |
           set -euo pipefail
+          # selftest:graphql-read-start  (byte-identical in every workflow that carries it)
+          # THE BODY DECIDES WHETHER A GraphQL READ SUCCEEDED, never the exit code
+          # alone. An HTTP 200 whose body carries `errors[]` (rate limit, partial
+          # payload, a NOT_FOUND on a sub-field) fed straight into `.data...nodes[]?`
+          # produces NOTHING, and nothing read as "not on the project" -- so the
+          # Item-closed automation could write Cancelled over shipped work
+          # (Bugbot on quickstart#5, (internal ref)). Empty and non-object bodies are
+          # refused for the same reason: a search over nothing finds nothing, and
+          # "found nothing" must never mean "absent". This function never
+          # whitelists an error type; the one benign NOT_FOUND is the caller's call.
+          #   $1  the raw payload   $2  what was being read (prefixes the message)
+          reject_graphql_errors() {
+            if ! jq -e 'type == "object"' >/dev/null 2>&1 <<< "$1"; then
+              echo "::error::$2: the response was not readable JSON (empty, truncated or not an object), so it cannot be shown to be error-free -- UNREADABLE, not absent" >&2
+              return 1
+            fi
+            if jq -e 'has("errors")' <<< "$1" >/dev/null 2>&1; then
+              echo "::error::$2: the response carries GraphQL errors[] ($(jq -r '[.errors[]? | ((.type // "?") + ": " + (.message // "?"))] | join("; ")' <<< "$1")) -- UNREADABLE, not absent" >&2
+              return 1
+            fi
+            return 0
+          }
+          # selftest:graphql-read-end
 
           RESULT_FILE="$RUNNER_TEMP/fr-pass.result"
           NOTE_FILE="$RUNNER_TEMP/fr-pass.note.md"
@@ -500,14 +523,21 @@ jobs:
           # $o: String! variable rejects. -f forces a string. (Some option IDs contain
           # letters today, but don't rely on that — IDs regenerate if recreated.)
           MUT_ERR="$RUNNER_TEMP/fr-pass.mutate.err"
+          # THE WRITE'S BODY IS READ TOO. The payload used to go to /dev/null and
+          # the exit code alone decided, so an exit-0 response carrying errors[]
+          # posted "advanced" on a card that had not moved -- and this event
+          # fires once, so nothing would have corrected it. The refusal's text
+          # is appended to MUT_ERR after gh's own stderr, so the comment below
+          # quotes whichever of the two happened.
           # shellcheck disable=SC2016  # the $names here are GraphQL variables, not shell - keep literal
-          if ! gh api graphql -f query='
+          if ! WRESP=$(gh api graphql -f query='
             mutation($p: ID!, $i: ID!, $f: ID!, $o: String!) {
               updateProjectV2ItemFieldValue(input: {
                 projectId: $p, itemId: $i, fieldId: $f,
                 value: {singleSelectOptionId: $o}
               }) { projectV2Item { id } }
-            }' -F p="$PROJECT_ID" -F i="$ITEM_ID" -F f="$STATUS_FIELD" -f o="$NEXT_OPT" > /dev/null 2> "$MUT_ERR"; then
+            }' -F p="$PROJECT_ID" -F i="$ITEM_ID" -F f="$STATUS_FIELD" -f o="$NEXT_OPT" 2> "$MUT_ERR") \
+             || ! reject_graphql_errors "$WRESP" "the Status write" 2>> "$MUT_ERR"; then
             MUT_HEAD=$(sed -n '1,5p' "$MUT_ERR" | tr -d "$FENCE")
             decide mutation-failed \
               "⚠️ \`/fr-pass\` could **not** be applied: the card is still in **$CURRENT** — the write to project #$PROJECT_NUMBER failed." \
