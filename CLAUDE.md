@@ -31,9 +31,9 @@ the checker can still fail.
 <!-- org-standards:begin -->
 ## tracebloc engineering standards (org-wide)
 
-<!-- Canonical source: tracebloc/org-config/org-standards.md.
+<!-- Canonical source: the private source repo/org-standards.md.
      Synced into every repo's CLAUDE.md between org-standards markers — never
-     edit it inside a consuming repo; open a PR against tracebloc/org-config.
+     edit it inside a consuming repo; open a PR against the private source repo.
      Meta-rule: the moment a rule below becomes mechanically enforced (a lint
      rule, a house-rules grep, a required check), delete the sentence here and
      let the check carry it. Prose is only for what tooling can't judge. -->
@@ -46,8 +46,8 @@ the checker can still fail.
 - Before starting any task: `git fetch` and branch from the current tip of `develop` — never build on a stale checkout. A branch that lives more than a day gets `develop` merged back in before review. We move fast; stale starts mean silent divergence and duplicated work.
 - One self-contained change per PR. A few hundred changed lines reviews well; at 1000+ split it. Refactors ship in separate PRs from behavior changes.
 - Branches are short-lived (aim to merge within a day or two), single-author, and based on `develop` — no stacked PRs on top of other open PRs.
-- Your branches are yours to clean up. Merged ones now delete themselves server-side, so this is about the rest: run `git reap` (from `tracebloc/org-config/scripts/git-reap`) in your checkouts now and then. It is dry-run by default and only proposes a branch when it can prove the work landed. Nobody else can do this for you — you are the only one who knows whether an *unmerged* branch of yours still matters, and `git branch --merged` will not tell you, because we squash-merge and a squashed branch is not an ancestor of `develop`.
-- **"Yours" is the branch you opened the PR for, never the branch whose last commit is yours.** Pushing a review fixup onto someone else's branch makes you its tip-commit author and changes nothing about whose work it is — so a "my branches" list built from `%(authorname)`, or from the tip author in any form, aims your cleanup at other people's work. Measured: two of Shujaat's `client` branches showed up on such a list and were one confirmation step away from `--delete` ((internal ref)). If you are building any list that reasons about ownership, call `tracebloc/org-config/scripts/branch_owner.py` rather than re-deriving it; a branch it cannot attribute comes back as `unattributable`, which is the answer to act on, not to fill in.
+- Your branches are yours to clean up. Merged ones now delete themselves server-side, so this is about the rest: run `git reap` (from `the private source repo/scripts/git-reap`) in your checkouts now and then. It is dry-run by default and only proposes a branch when it can prove the work landed. Nobody else can do this for you — you are the only one who knows whether an *unmerged* branch of yours still matters, and `git branch --merged` will not tell you, because we squash-merge and a squashed branch is not an ancestor of `develop`.
+- **"Yours" is the branch you opened the PR for, never the branch whose last commit is yours.** Pushing a review fixup onto someone else's branch makes you its tip-commit author and changes nothing about whose work it is — so a "my branches" list built from `%(authorname)`, or from the tip author in any form, aims your cleanup at other people's work. Measured: two of Shujaat's `client` branches showed up on such a list and were one confirmation step away from `--delete` ((internal ref)). If you are building any list that reasons about ownership, call `the private source repo/scripts/branch_owner.py` rather than re-deriving it; a branch it cannot attribute comes back as `unattributable`, which is the answer to act on, not to fill in.
 - Names and commits: `feat/ fix/ docs/ sec/ ci/ chore/` + issue number + short slug (`fix/1234-ingest-timeout`); commit subjects `type(scope): summary`, referencing the ticket (`(internal ref)`). **`(scope)` is the component — `mint-scope`, `kanban` — never the ticket number.** A number in a PR title (`sec(2157): …`) is read by `closing-ref` as a reference the body must make good, in one of two forms: `Closes <owner>/<repo>#N` when this PR really finishes the ticket, or `Part of <owner>/<repo>#N` when it does not. Both satisfy the check; only `Closes` closes the ticket and moves its card, so never write it for partial work — and a bare `Closes #N` resolves against the repo you are in, which for a `(internal ref)` ticket links the wrong issue. Keeping the number in the title is right either way: naming the parent is traceability, not a promise to close it ((internal ref)).
 - When you open a PR: assign yourself and request exactly one human reviewer immediately — a PR without one stalls by construction. You pick the reviewer: whoever knows the code best; there is no per-repo human default. Separately, CODEOWNERS auto-requests `@tracebloc-review` (the automated review account) on every PR, and its approving review satisfies branch protection's required review. That request is in addition to the human reviewer you pick, not a substitute for picking one.
 - When you are the reviewer: first response within one business day.
@@ -79,7 +79,7 @@ the checker can still fail.
 ### Filing issues
 
 - Internal work — planning, epics, security findings, infrastructure, anything mentioning a customer — is filed in `backend` (the private catch-all), never in a public repo. When in doubt: `backend`.
-- Public repos (`cli`, `client`, `docs`, `data-ingestors`, `model-zoo`, `start-training`, `.github`) only get issues a stranger could act on: about the public artifact itself, with no customer names, internal URLs, or internal paths.
+- Public repos -- every `visibility: public` row in `the private source repo/repo-inventory.yml` -- only get issues a stranger could act on: about the public artifact itself, with no customer names, internal URLs, or internal paths. This bullet used to enumerate them by name and drifted. Restating the authority is the defect; the inventory is the list.
 
 ### AI-assisted sessions (Claude Code, etc.)
 
