@@ -1,12 +1,12 @@
 name: Template rules
 
 # Runs the D9 template rule checker. Until this existed, NOTHING executed
-# `scripts/check_templates.py`: the only CI change #89 made was arming the
-# shared reusable's `ruff` job, which lints changed `.py` files and says
-# nothing about the templates. So every "enforced" in families.json, the
-# templates README, CLAUDE.md and #89's own body meant "enforced if the author
-# remembers to run it locally" -- a checker that is never invoked is
-# indistinguishable from one that always passes (start-training#89, 5/10).
+# `scripts/check_templates.py`: the change that introduced the checker only
+# armed the shared reusable's `ruff` job, which lints changed `.py` files and
+# says nothing about the templates. So every "enforced" in families.json, the
+# templates README and CLAUDE.md meant "enforced if the author remembers to
+# run it locally" -- a checker that is never invoked is indistinguishable from
+# one that always passes.
 #
 # `paths:` is deliberately ABSENT. A path filter here would be the same defect
 # one level up: edit only `scripts/check_templates.py` and the job that
