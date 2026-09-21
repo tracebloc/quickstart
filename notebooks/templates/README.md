@@ -30,7 +30,7 @@ For the guide, see
 > `.github/workflows/template-rules.yml` on every PR. Before that workflow
 > existed nothing ran it, so every "enforced" below meant "enforced if the
 > author remembers" — the defect this whole file is otherwise about
-> (start-training#89, 5/10). It is **not yet a required status check**;
+> (the finding that motivated the checker). It is **not yet a required status check**;
 > until an admin adds it to develop's contexts, a red here is visible but
 > not blocking.
 
