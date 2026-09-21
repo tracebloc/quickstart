@@ -23,7 +23,7 @@ rule 14b **deleted rule 16 outright**. Nothing noticed, because only the
 mutations for the rules being touched were re-run. It surfaced by luck — an
 unrelated rule-16 mutation happened to come back green during a later spot
 check. A committed harness turns that luck into a failing test, which is the
-whole argument for this file (start-training#91, review).
+whole argument for this file (the review of this harness's first version).
 
 Two disciplines it encodes, both learned the hard way here:
 

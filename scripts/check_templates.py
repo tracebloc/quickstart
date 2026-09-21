@@ -35,8 +35,8 @@ Checked:
     an f-string silently turns `{{ key }}` into.
 17. No cell carries an internal reference — a private tracker id, an RFC id,
     an internal hostname. The templates render into a peer's notebook, so
-    unlike this repo's prose docs, anything in a cell is shown outside the
-    org.
+    anything in a cell is shown outside the org -- and this repository is
+    public, so the same holds for its prose.
 16. No `training.*` setter call sits outside the settings cell or a settings
     fragment, and the settings cell comes after the cell that assigns
     `training`. Start re-links and then executes ONLY the settings cell, so a
@@ -100,7 +100,7 @@ COLAB_MARKERS = ("colab.research.google.com", "google.colab", "drive.mount")
 
 # Internal references must not appear in a TEMPLATE CELL. The templates render
 # into a peer's notebook, so anything here is shown to people outside the org
-# — unlike this repo's prose docs. The survival banner shipped with a private
+# — and this repository is public, so its prose is too. The survival banner shipped with a private
 # tracker id AND an RFC id rendered to strangers; grep-expressible, so it is a
 # rule rather than something to stay vigilant about.
 # Match the FORM, not a list of spellings. The first version enumerated the
@@ -510,7 +510,7 @@ def derive_single_pass_frameworks(floor):
     Returns (frameworks, version, problem). Exactly one of `frameworks` /
     `problem` is meaningful.
 
-    Three things this used to get wrong, all found on start-training#89 (9/10):
+    Three things this used to get wrong, all found in the review that motivated this checker:
 
     * It imported whatever `tracebloc` happened to be on `sys.path` and
       reported "matches the installed SDK" with no version. Measured: `pip
