@@ -1,7 +1,7 @@
 name: Template rules
 
 # Runs the D9 template rule checker. Until this existed, NOTHING executed
-# `scripts/check_templates.py`: the only CI change #89 made was arming the
+# `scripts/check_templates.py`: the only CI change that finding made was arming the
 # shared reusable's `ruff` job, which lints changed `.py` files and says
 # nothing about the templates. So every "enforced" in families.json, the
 # templates README, CLAUDE.md and the original finding's own text meant "enforced if the author
