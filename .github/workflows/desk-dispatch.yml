@@ -195,7 +195,6 @@ on:
       - Add to engineer kanban
       - Bugbot review gate
       - Code quality
-      - Commit hygiene
       - FR gate
       - Model-zoo paths
       - Route kanban Status on closure
