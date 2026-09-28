@@ -63,7 +63,7 @@ jobs:
         # tree while the harness mutated a copy, and four of its six rules
         # came back MISSED. A checker that cannot fail is indistinguishable
         # from one that always passes.
-        run: python3 scripts/check_zoo_paths.py --zoo model-zoo --self-test
+        run: python3 scripts/check_zoo_paths_mutations.py --zoo model-zoo
 
       - name: Every model-zoo path in the notebooks resolves
         run: python3 scripts/check_zoo_paths.py --zoo model-zoo
