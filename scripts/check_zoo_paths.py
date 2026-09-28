@@ -4,7 +4,9 @@
 Run from the repo root, with a `model-zoo` checkout beside it — the same
 place the guide's own clone cell puts one:
 
-    python3 scripts/check_zoo_paths.py [--zoo ../model-zoo] [--self-test]
+    python3 scripts/check_zoo_paths.py [--zoo ../model-zoo]
+
+Its mutation harness is `scripts/check_zoo_paths_mutations.py`.
 
 Why this exists
 ---------------
@@ -53,7 +55,7 @@ Missing checkout is a FAILURE, not a skip
 This script refuses to pass when it cannot find the zoo. A check that
 quietly skips is indistinguishable from one that always passes — the
 exact defect `.github/workflows/template-rules.yml` was created to end
-after nothing at all executed `check_templates.py`. `--self-test`
+after nothing at all executed `check_templates.py`. The mutation harness
 registers that behaviour as a case, so the refusal is itself seen to
 fail rather than assumed.
 """
@@ -64,10 +66,8 @@ import argparse
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
-import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_ZOO = os.path.join(os.path.dirname(ROOT), "model-zoo")
@@ -111,7 +111,7 @@ def _iter_files(root: str = ROOT):
     """Every file under ``root`` that could name a zoo path.
 
     ``root`` is a parameter and not the module constant because the
-    self-test runs the checker against a mutated COPY of the tree. The
+    mutation harness runs the checker against a mutated COPY of the tree. The
     first version of this function read ``ROOT`` directly while
     ``check()`` accepted a ``root``: every mutation then landed in the
     copy and the checker read the real tree, so four of the five
@@ -177,110 +177,6 @@ def check(zoo: str, root: str = ROOT) -> list:
     return violations
 
 
-# --------------------------------------------------------------------------
-# Self-test: every rule above, seen to FAIL.
-# --------------------------------------------------------------------------
-
-_MUTATIONS = (
-    (
-        "a model file the zoo does not ship (the quickstart#11 defect itself)",
-        {"notebooks/mutant.ipynb": "model_zoo/image_classification/pytorch/densenet.py"},
-        None,
-    ),
-    (
-        "a directory the zoo does not have (a retired framework)",
-        {"notebooks/mutant.ipynb": "`model_zoo/image_classification/tensorflow/`"},
-        None,
-    ),
-    (
-        "a family that never existed",
-        {"notebooks/mutant.ipynb": "`model_zoo/telepathy/pytorch/`"},
-        None,
-    ),
-    (
-        "a zoo path named in README.md rather than in a notebook",
-        {"README.md": "see `model_zoo/image_classification/pytorch/densenet.py`"},
-        None,
-    ),
-    ("no zoo checkout at all", {}, "/nonexistent-zoo-checkout"),
-    # Not a bad path but an absent one: the shape where the checker keeps
-    # passing while checking nothing. If ZOO_PATH stops matching how the
-    # notebooks write these paths, every real reference vanishes and the
-    # loop below runs zero times — which without this rule reads exactly
-    # like a clean tree.
-    ("a tree that names no zoo paths at all", {"__strip__": True}, None),
-)
-
-
-def _self_test(zoo: str) -> int:
-    """Run each mutation against a throwaway copy; every one must FAIL.
-
-    A checker that passes tells you the tree is clean. Only a mutation
-    tells you the checker can still fail — `check_templates_mutations.py`
-    exists in this repo because a deleted rule left its checker green.
-    """
-    print("self-test: every rule, seen to fail\n")
-    failures = []
-    for description, edits, zoo_override in _MUTATIONS:
-        workspace = tempfile.mkdtemp(prefix="zoo-paths-selftest-")
-        try:
-            shutil.copytree(
-                os.path.join(ROOT, "notebooks"), os.path.join(workspace, "notebooks")
-            )
-            shutil.copy(os.path.join(ROOT, "README.md"), workspace)
-            if edits.pop("__strip__", False):
-                shutil.rmtree(os.path.join(workspace, "notebooks"))
-                os.makedirs(os.path.join(workspace, "notebooks"))
-                open(os.path.join(workspace, "README.md"), "w").close()
-            for relative_path, text in edits.items():
-                target = os.path.join(workspace, relative_path)
-                if target.endswith(".ipynb"):
-                    with open(target, "w", encoding="utf-8") as handle:
-                        json.dump(
-                            {
-                                "cells": [
-                                    {
-                                        "cell_type": "markdown",
-                                        "metadata": {},
-                                        "source": [text],
-                                    }
-                                ],
-                                "metadata": {},
-                                "nbformat": 4,
-                                "nbformat_minor": 5,
-                            },
-                            handle,
-                        )
-                else:
-                    with open(target, "a", encoding="utf-8") as handle:
-                        handle.write("\n" + text + "\n")
-
-            violations = check(zoo_override or zoo, root=workspace)
-            verdict = "caught" if violations else "MISSED"
-            print(f"  [{verdict}] {description}")
-            if violations:
-                print(f"           {violations[0]}")
-            else:
-                failures.append(description)
-        finally:
-            shutil.rmtree(workspace, ignore_errors=True)
-
-    # The tree as committed must still pass, or the mutations above prove
-    # nothing about the rules — only that the checker always fails.
-    clean = check(zoo)
-    print(f"\n  [{'ok' if not clean else 'BROKEN'}] the committed tree passes")
-    if clean:
-        failures.append("the committed tree does not pass")
-
-    if failures:
-        print("\nself-test FAILED:")
-        for failure in failures:
-            print(f"  - {failure}")
-        return 1
-    print("\nself-test OK — every rule was seen to fail on a mutation.")
-    return 0
-
-
 def _clone_zoo(destination: str) -> str:
     print(f"cloning the model zoo into {destination} ...")
     subprocess.run(
@@ -311,19 +207,11 @@ def main() -> int:
         "same ref the guide's own `git clone` cell gets, so this check "
         "follows that cell rather than a branch name written down here",
     )
-    parser.add_argument(
-        "--self-test",
-        action="store_true",
-        help="run the mutation harness instead of the check",
-    )
     arguments = parser.parse_args()
 
     zoo = arguments.zoo
     if arguments.clone and not os.path.isdir(os.path.join(zoo, "model_zoo")):
         _clone_zoo(zoo)
-
-    if arguments.self_test:
-        return _self_test(zoo)
 
     violations = check(zoo)
     if violations:

@@ -209,6 +209,7 @@ on:
       - Commit hygiene
       - FR gate
       - Model-zoo paths
+      - Mutation coverage
       - Route kanban Status on closure
       - Set PR card Status on project
       - Template rules
