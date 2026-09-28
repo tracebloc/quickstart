@@ -1,0 +1,23 @@
+# Mutation coverage declaration. Read by `mutation-coverage / check`
+# (.github/workflows/mutation-coverage.yml, a generated file).
+#
+# `guards:` says WHERE guards live, never which exist: a checker added under
+# scripts/ is in the set the day it lands, and reads as UNCOVERED until a row
+# file names it.
+#
+# `rows:` lists the files that hold MUTATION ROWS, by name. A row mutates the
+# real checker's input from a tree that passes, asserts the mutation landed,
+# and asserts the exact violation the checker reports. A row file names each
+# checker it covers by its repo-relative path, literally; an import by module
+# name does not count. A file never covers itself, which is why each checker's
+# harness is its own `_mutations.py` sibling.
+#
+# `exempt:` would list the gaps, each with the ticket that closes it, and can
+# only shrink. There are none.
+guards:
+  - scripts/*.py
+exclude:
+  - scripts/*_mutations.py
+rows:
+  - scripts/check_templates_mutations.py
+  - scripts/check_zoo_paths_mutations.py

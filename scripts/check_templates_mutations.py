@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mutation harness for `check_templates.py`: every rule, seen to fail.
+"""Mutation harness for `scripts/check_templates.py`: every rule, seen to fail.
 
 Run from the repo root:
 

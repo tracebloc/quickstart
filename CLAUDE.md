@@ -23,7 +23,7 @@ zoo had stopped shipping (#11) precisely because nothing connected the
 two repos; its input lives in another repository, which is why the
 workflow also runs nightly rather than only on this repo's commits.
 
-Both take `--self-test` / a `_mutations.py` sibling that mutates a copy
+Both have a `_mutations.py` sibling that mutates a copy
 of the tree and asserts every rule is SEEN to fail. Run it after editing
 a rule: a checker passing says the tree is clean, only a mutation says
 the checker can still fail.
