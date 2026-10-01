@@ -21,9 +21,9 @@ git clone https://github.com/tracebloc/quickstart.git
 cd quickstart
 
 # Pick the extra that matches your ML framework:
-pip install "tracebloc[pytorch]>=0.14.0"  # most common
-# pip install "tracebloc[sklearn]>=0.14.0" # scikit-learn / boosting
-# pip install "tracebloc[all]>=0.14.0"     # everything
+pip install "tracebloc[pytorch]>=1.2.36"  # most common
+# pip install "tracebloc[sklearn]>=1.2.36" # scikit-learn / boosting
+# pip install "tracebloc[all]>=1.2.36"     # everything
 
 jupyter notebook notebooks/traceblocTrainingGuide.ipynb
 ```
