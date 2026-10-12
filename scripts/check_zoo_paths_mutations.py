@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# mutates: scripts/check_zoo_paths.py
 """Mutation harness for `scripts/check_zoo_paths.py`: every rule, seen to fail.
 
 Run from the repo root, with a `model-zoo` checkout beside it:
