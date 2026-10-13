@@ -224,6 +224,7 @@ on:
       - Add to engineer kanban
       - Code quality
       - Commit hygiene
+      - Desk verdict footer
       - FR gate
       - Model-zoo paths
       - Mutation coverage
