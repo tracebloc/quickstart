@@ -228,6 +228,7 @@ on:
       - FR gate
       - Model-zoo paths
       - Mutation coverage
+      - Naming guard
       - Route kanban Status on closure
       - Set PR card Status on project
       - Template rules
