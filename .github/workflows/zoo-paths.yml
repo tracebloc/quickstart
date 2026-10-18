@@ -19,7 +19,12 @@ name: Model-zoo paths
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
+    # No `ready_for_review`: this job treats a draft like any other pull
+    # request, so the draft's own run is already the verdict on its head.
+    # Marking the PR ready would only re-run that unchanged head, and beside
+    # the cancelling group below the re-run can leave a cancelled run in the
+    # check suite branch protection reads. Do not add it back.
+    types: [opened, reopened, synchronize]
   push:
     branches: [develop, staging, main]
   schedule:
