@@ -20,8 +20,10 @@ on:
     # the cancelling group below the re-run can leave a cancelled run in the
     # check suite branch protection reads. Do not add it back.
     types: [opened, reopened, synchronize]
+  # `develop` only: staging and main receive the release train's merge commits, whose
+  # tree a develop push run already checked, and no protection on them reads this job.
   push:
-    branches: [develop, staging, main]
+    branches: [develop]
 
 concurrency:
   group: template-rules-${{ github.workflow }}-${{ github.ref }}
