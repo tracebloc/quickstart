@@ -7,9 +7,12 @@ and this repo's default reviewer. Rollout: (internal ref).
 ## Checks
 
 Two checkers, each with its own workflow and its own mutation harness.
-Run both before pushing:
+`make check` runs both, each after its harness, as CI does; the pre-push hook
+runs it before every push, and `make setup` installs that hook in this clone:
 
 ```sh
+make check    # both checkers and their mutation harnesses
+make setup    # this clone's pre-push hook, which runs `make check`
 python3 scripts/check_templates.py                      # D9 template rules
 python3 scripts/check_zoo_paths.py --zoo ../model-zoo   # zoo paths resolve
 ```
