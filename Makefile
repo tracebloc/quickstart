@@ -1,5 +1,6 @@
-# quickstart: the notebooks' two checkers, as CI runs them on a pull request
-# (template-rules.yml, zoo-paths.yml), and the pre-push hook that runs them.
+# quickstart: the notebooks' two checkers and the pre-push hook that runs them.
+# CI runs template-rules.yml on a pull request; zoo-paths.yml runs on develop pushes
+# and nightly, so `make check` is the only pre-merge run of the zoo check.
 #
 #   make check          both checkers, each after its mutation harness
 #   make setup          install this clone's pre-push hook, which runs `make check`
