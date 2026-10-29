@@ -7,9 +7,12 @@ and this repo's default reviewer. Rollout: (internal ref).
 ## Checks
 
 Two checkers, each with its own workflow and its own mutation harness.
-Run both before pushing:
+`make check` runs both, each after its harness, as CI does; the pre-push hook
+runs it before every push, and `make setup` installs that hook in this clone:
 
 ```sh
+make check    # both checkers and their mutation harnesses
+make setup    # this clone's pre-push hook, which runs `make check`
 python3 scripts/check_templates.py                      # D9 template rules
 python3 scripts/check_zoo_paths.py --zoo ../model-zoo   # zoo paths resolve
 ```
@@ -20,8 +23,10 @@ README — must exist in a `model-zoo` checkout. It needs one beside this
 repo (`--clone` fetches it), and it **fails rather than skips** when it
 cannot find one. The guide's default `MODEL_PATH` pointed at a file the
 zoo had stopped shipping (#11) precisely because nothing connected the
-two repos; its input lives in another repository, which is why the
-workflow also runs nightly rather than only on this repo's commits.
+two repos; its input lives in another repository, which is why its
+workflow runs on the develop push and nightly, and not on pull requests:
+a zoo change could turn it red on any pull request here. CI does not run
+it on your pull request, so run it yourself before you push.
 
 Both have a `_mutations.py` sibling that mutates a copy
 of the tree and asserts every rule is SEEN to fail. Run it after editing
