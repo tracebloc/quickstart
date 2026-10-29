@@ -16,15 +16,12 @@ name: Model-zoo paths
 # green on the day the zoo drops a file. That is what the nightly
 # schedule below is for: the guide can break without a commit landing
 # anywhere in this repo.
+#
+# NOT ON PULL REQUESTS: a zoo change can turn it red on a pull request that
+# changed nothing it reads, and no pull request is required to pass it. Run
+# `python3 scripts/check_zoo_paths.py --zoo ../model-zoo` before you push.
 
 on:
-  pull_request:
-    # No `ready_for_review`: this job treats a draft like any other pull
-    # request, so the draft's own run is already the verdict on its head.
-    # Marking the PR ready would only re-run that unchanged head, and beside
-    # the cancelling group below the re-run can leave a cancelled run in the
-    # check suite branch protection reads. Do not add it back.
-    types: [opened, reopened, synchronize]
   # `develop` only: staging and main receive the release train's merge commits, whose
   # tree a develop push run already checked, and no protection on them reads this job.
   push:
@@ -37,9 +34,8 @@ on:
 
 concurrency:
   group: zoo-paths-${{ github.workflow }}-${{ github.ref }}
-  # PR runs supersede each other; push and scheduled runs must not — a
-  # cancelled run leaves that commit with NO verdict, which reads the same
-  # as never having been checked.
+  # Push and scheduled runs never cancel each other: a cancelled run leaves
+  # that commit with NO verdict, which reads the same as never having been checked.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
