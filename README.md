@@ -1,4 +1,4 @@
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tracebloc/quickstart/blob/main/notebooks/traceblocTrainingGuide.ipynb) [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE) [![Platform](https://img.shields.io/badge/platform-tracebloc-00C9A7.svg)](https://ai.tracebloc.io)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE) [![Platform](https://img.shields.io/badge/platform-tracebloc-00C9A7.svg)](https://ai.tracebloc.io)
 
 # Quickstart 🚀
 
@@ -6,15 +6,7 @@ Launch an ML training experiment on [tracebloc](https://tracebloc.io/) in under 
 
 ## Get started
 
-### Option A: Google Colab (recommended)
-
-No local setup. Click the badge above or:
-
-**👉 [Open in Google Colab](https://colab.research.google.com/github/tracebloc/quickstart/blob/main/notebooks/traceblocTrainingGuide.ipynb)**
-
-Copy the notebook to your Drive and start running cells.
-
-### Option B: Run locally
+Run the notebook in your own Jupyter:
 
 ```bash
 git clone https://github.com/tracebloc/quickstart.git
