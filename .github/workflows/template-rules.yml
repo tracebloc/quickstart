@@ -26,7 +26,10 @@ on:
     branches: [develop]
 
 concurrency:
-  group: template-rules-${{ github.workflow }}-${{ github.ref }}
+  # A pull request's runs share its ref and supersede each other. A develop push run is
+  # keyed by its commit and event: in one group per ref, a newer push replaces the
+  # earlier commit's PENDING run, and that commit is left with no verdict at all.
+  group: template-rules-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || format('{0}-{1}-{2}', github.ref, github.event_name, github.sha) }}
   # PR runs supersede each other; PUSH runs must not. Cancelling on push
   # leaves the earlier commit with a cancelled run and therefore NO verdict,
   # which reads the same as never having been checked.
