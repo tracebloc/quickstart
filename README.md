@@ -64,3 +64,5 @@ Results appear on the use case leaderboard in the [tracebloc web app](https://ai
 Apache 2.0 — see [LICENSE](LICENSE).
 
 **Need help?** [support@tracebloc.io](mailto:support@tracebloc.io) or [open an issue](https://github.com/tracebloc/quickstart/issues).
+
+**Found a security vulnerability?** Report it privately: see [SECURITY.md](SECURITY.md).
