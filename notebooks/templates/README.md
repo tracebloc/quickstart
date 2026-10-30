@@ -8,8 +8,7 @@ hand-maintained notebooks rot within a quarter — six families do not.
 `notebook.render` still resolves by `(category, framework)`. It is the *files*
 that are per family, not the lookup.
 
-These are **not** the user-facing guide. They carry no Colab lines and no
-install cell: the pod they render in already has the SDK and the model zoo. They
+These are **not** the user-facing guide. They carry no install cell: the pod they render in already has the SDK and the model zoo. They
 also carry no login prompt — though that one is a *target*, not yet true; see
 "Two dependencies" below, because environment login is merged and unreleased.
 For the guide, see
@@ -288,7 +287,5 @@ Per *family*, not per pair — six owners, in Data Science. Defaults recorded
 number work.
 
 > **Reaching users.** These templates render inside the pod, so they reach a
-> peer through the notebook image, not through the Colab link. They are
-> unrelated to the Drive-hosted copy of the *guide* that the web app's "Start
-> training" button still points at — nothing in this
-> repo can change that copy, and nothing here needs to.
+> peer through the notebook image. The *guide* is what a peer runs in their
+> own notebook; the templates never reach it.
