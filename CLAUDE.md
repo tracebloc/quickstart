@@ -6,15 +6,17 @@ and this repo's default reviewer. Rollout: (internal ref).
 
 ## Checks
 
-Two checkers, each with its own workflow and its own mutation harness.
-`make check` runs both, each after its harness, as CI does; the pre-push hook
-runs it before every push, and `make setup` installs that hook in this clone:
+Three checkers, each with its own mutation harness. `make check` runs the
+checkers and then every mutation row; the pre-push hook runs it before every
+push, and `make setup` installs that hook in this clone:
 
 ```sh
-make check    # both checkers and their mutation harnesses
+make check    # the three checkers, then every mutation row
 make setup    # this clone's pre-push hook, which runs `make check`
 python3 scripts/check_templates.py                      # D9 template rules
 python3 scripts/check_zoo_paths.py --zoo ../model-zoo   # zoo paths resolve
+python3 scripts/check_mutation_wiring.py                # where the mutation rows run
+make mutation-nightly                                   # the weekly run of every row
 ```
 
 `check_zoo_paths.py` is the cross-repo one: every `model_zoo/...` path
@@ -28,10 +30,21 @@ workflow runs on the develop push and nightly, and not on pull requests:
 a zoo change could turn it red on any pull request here. CI does not run
 it on your pull request, so run it yourself before you push.
 
-Both have a `_mutations.py` sibling that mutates a copy
+Each has a `_mutations.py` sibling that mutates a copy
 of the tree and asserts every rule is SEEN to fail. Run it after editing
 a rule: a checker passing says the tree is clean, only a mutation says
 the checker can still fail.
+
+The harnesses are the `rows:` of `.github/mutation-coverage.yml`. CI runs
+them only on the weekly schedule (`mutation-nightly.yml`, which runs `make
+mutation-nightly` and files a bug when it goes red), never on a pull
+request: a checker your pull request breaks is caught by `make check`
+before you push, or by the next weekly run. `make mutation-nightly`
+installs the SDK into a venv of its own and clones the public zoo when
+`ZOO` does not exist. Both targets read the list from the declaration
+through `scripts/check_mutation_wiring.py --run`, so a row file is added
+there and nowhere else; the same script, run on every pull request by
+template-rules.yml, fails if any other workflow runs a row.
 
 <!-- org-standards:begin -->
 ## tracebloc engineering standards (org-wide)
