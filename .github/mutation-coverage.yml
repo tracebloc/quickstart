@@ -12,6 +12,11 @@
 # name does not count. A file never covers itself, which is why each checker's
 # harness is its own `_mutations.py` sibling.
 #
+# The rows run on the weekly schedule, as `make mutation-nightly` in
+# .github/workflows/mutation-nightly.yml, and on no pull request. That target and
+# `make check` read this list (scripts/check_mutation_wiring.py --run), so a row
+# file added here runs from then on; the same script holds that wiring.
+#
 # `exempt:` would list the gaps, each with the ticket that closes it, and can
 # only shrink. There are none.
 guards:
@@ -19,5 +24,6 @@ guards:
 exclude:
   - scripts/*_mutations.py
 rows:
+  - scripts/check_mutation_wiring_mutations.py
   - scripts/check_templates_mutations.py
   - scripts/check_zoo_paths_mutations.py

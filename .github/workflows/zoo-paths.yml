@@ -20,6 +20,10 @@ name: Model-zoo paths
 # NOT ON PULL REQUESTS: a zoo change can turn it red on a pull request that
 # changed nothing it reads, and no pull request is required to pass it. Run
 # `python3 scripts/check_zoo_paths.py --zoo ../model-zoo` before you push.
+#
+# The checker's mutation harness is not run here: every mutation row runs on the
+# weekly schedule, in mutation-nightly.yml (`make mutation-nightly`), against a
+# fresh clone of the zoo's default branch.
 
 on:
   # `develop` only: staging and main receive the release train's merge commits, whose
@@ -58,15 +62,6 @@ jobs:
           # gets the DEFAULT branch — so this check follows that cell
           # rather than a branch name written down here, which would
           # silently stop matching the day the default moves.
-
-      - name: Mutation harness — every rule seen to FAIL
-        # Before the check, on purpose: the check passing says the tree is
-        # clean, the harness says the check can still fail. It is not
-        # theoretical here — the first version of the checker read the real
-        # tree while the harness mutated a copy, and four of its six rules
-        # came back MISSED. A checker that cannot fail is indistinguishable
-        # from one that always passes.
-        run: python3 scripts/check_zoo_paths_mutations.py --zoo model-zoo
 
       - name: Every model-zoo path in the notebooks resolves
         run: python3 scripts/check_zoo_paths.py --zoo model-zoo

@@ -15,6 +15,7 @@
 .github/workflows/fr-pass-comment.yml linguist-generated=true
 .github/workflows/kanban-closure-router.yml linguist-generated=true
 .github/workflows/mutation-coverage.yml linguist-generated=true
+.github/workflows/mutation-nightly.yml linguist-generated=true
 .github/workflows/naming-guard.yml linguist-generated=true
 .github/workflows/set-pr-status.yml linguist-generated=true
 .github/workflows/stale-backlog.yml linguist-generated=true
