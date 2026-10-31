@@ -11,6 +11,10 @@ name: Template rules
 # `paths:` is deliberately ABSENT. A path filter here would be the same defect
 # one level up: edit only `scripts/check_templates.py` and the job that
 # validates it would not run.
+#
+# The checker's mutation harness is not run here: every mutation row runs on the
+# weekly schedule, in mutation-nightly.yml (`make mutation-nightly`), and the last
+# step below holds that wiring.
 
 on:
   pull_request:
@@ -82,14 +86,6 @@ jobs:
                 sorted(getattr(f, "value", f) for f in _SURVIVAL_FRAMEWORKS))
           PY
 
-      - name: Mutation harness — every rule seen to FAIL
-        # Runs before the checker on purpose: the checker passing tells you the
-        # tree is clean, the harness tells you the checker can still fail. A
-        # deleted rule leaves the checker green (measured: deleting rule 16
-        # still printed "OK -- all D9 rules hold") and only the harness catches
-        # it.
-        run: python3 scripts/check_templates_mutations.py
-
       - name: D9 rule checker
         # Runs from the repo root; the checker resolves its own paths.
         # TRACEBLOC_CHECK_STRICT makes "cannot determine the SDK version" a
@@ -98,3 +94,8 @@ jobs:
         env:
           TRACEBLOC_CHECK_STRICT: '1'
         run: python3 scripts/check_templates.py
+
+      - name: Mutation wiring
+        # The mutation rows run weekly in mutation-nightly.yml and in no other
+        # workflow; this holds that wiring. The checker's docstring says how.
+        run: python3 scripts/check_mutation_wiring.py
