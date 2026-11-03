@@ -20,10 +20,10 @@ pip install "tracebloc[pytorch]>=1.2.47"  # most common
 jupyter notebook notebooks/traceblocTrainingGuide.ipynb
 ```
 
-**Which Pythons work:** whatever the SDK's own package metadata declares — see
-[`tracebloc` on PyPI](https://pypi.org/project/tracebloc/). This README
-deliberately does not repeat the range; a copy here would go stale against the
-package, which is exactly the failure this notebook was fixed for.
+**Which Pythons work:** Python 3.11 to 3.14. Python 3.15 is not supported yet,
+because PyTorch, torchvision and the scikit-learn boosters do not ship wheels
+for it. If your Mac's default `python3` is 3.15, install a supported one with
+`brew install python@3.14` and run the notebook with that interpreter.
 
 If pip answers `No matching distribution found for tracebloc`, that most often
 means your interpreter is outside that range rather than the package being
