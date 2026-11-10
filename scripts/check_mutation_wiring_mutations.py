@@ -39,7 +39,7 @@ _spec.loader.exec_module(checker)
 
 DECL = ".github/mutation-coverage.yml"
 WEEKLY = ".github/workflows/mutation-nightly.yml"
-TEMPLATE_RULES = ".github/workflows/template-rules.yml"
+PR_WIRING = ".github/workflows/mutation-wiring.yml"
 ZOO_PATHS = ".github/workflows/zoo-paths.yml"
 ALONE = "mutation rows run in .github/workflows/mutation-nightly.yml alone"
 COPIED = (".github/", "scripts/")
@@ -125,7 +125,7 @@ def _track(work):
 # (description, mutate, landed, expected). `landed(work)` returns why the mutation
 # did NOT apply, or None; `expected(work)` is every line `check()` must return.
 
-D9_ANCHOR = "      - name: D9 rule checker\n"
+PR_ANCHOR = "      - name: Mutation wiring\n"
 ZOO_ANCHOR = "      - name: Every model-zoo path in the notebooks resolves\n"
 NIGHTLY_RECIPE = 'mutation-nightly:\n\t$(WIRING) --run --zoo "$(ZOO)"\n'
 PHONY = ".PHONY: check templates zoo-paths wiring mutations mutation-nightly setup\n"
@@ -203,27 +203,27 @@ TREE_MUTATIONS = (
     ),
     (
         "a pull-request workflow runs a harness again",
-        lambda w: _plant_step(w, TEMPLATE_RULES, D9_ANCHOR,
+        lambda w: _plant_step(w, PR_WIRING, PR_ANCHOR,
                               "      - name: Mutation harness\n"
                               "        run: python3 scripts/check_templates_mutations.py\n\n"),
-        lambda w: _step_runs(w, TEMPLATE_RULES, "scripts/check_templates_mutations.py"),
-        lambda w: [f"{TEMPLATE_RULES}: job `d9-rules` runs scripts/check_templates_mutations.py; {ALONE}"],
+        lambda w: _step_runs(w, PR_WIRING, "scripts/check_templates_mutations.py"),
+        lambda w: [f"{PR_WIRING}: job `mutation-wiring` runs scripts/check_templates_mutations.py; {ALONE}"],
     ),
     (
         "a pull-request workflow runs `make check`, which runs every row",
-        lambda w: _plant_step(w, TEMPLATE_RULES, D9_ANCHOR, "      - run: make check\n\n"),
-        lambda w: _step_runs(w, TEMPLATE_RULES, "make check"),
-        lambda w: [f"{TEMPLATE_RULES}: job `d9-rules` runs `make check`, whose dry run runs the mutation rows; {ALONE}"],
+        lambda w: _plant_step(w, PR_WIRING, PR_ANCHOR, "      - run: make check\n\n"),
+        lambda w: _step_runs(w, PR_WIRING, "make check"),
+        lambda w: [f"{PR_WIRING}: job `mutation-wiring` runs `make check`, whose dry run runs the mutation rows; {ALONE}"],
     ),
     (
         "a pull-request workflow runs the weekly entry, hidden in env and bash -c",
-        lambda w: _plant_step(w, TEMPLATE_RULES, D9_ANCHOR,
+        lambda w: _plant_step(w, PR_WIRING, PR_ANCHOR,
                               "      - env:\n"
                               "          ENTRY: ${{ 'make mutation-nightly' }}\n"
                               '        run: bash -euo pipefail -c "$ENTRY"\n\n'),
-        lambda w: _step_runs(w, TEMPLATE_RULES, '-c "$ENTRY"'),
+        lambda w: _step_runs(w, PR_WIRING, '-c "$ENTRY"'),
         lambda w: [
-            f"{TEMPLATE_RULES}: job `d9-rules` runs `make mutation-nightly`, whose dry run runs the mutation "
+            f"{PR_WIRING}: job `mutation-wiring` runs `make mutation-nightly`, whose dry run runs the mutation "
             f"rows; {ALONE}"
         ],
     ),

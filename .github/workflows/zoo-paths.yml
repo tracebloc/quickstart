@@ -9,13 +9,12 @@ name: Model-zoo paths
 # human executing the notebook end to end found it. Fixing the path fixes
 # one instance; this job is what stops the class.
 #
-# `paths:` is deliberately ABSENT, for the same reason template-rules.yml
-# says so: a path filter would mean editing the checker itself skips the
-# job that runs it. It also would not help — the input that rots is in
-# ANOTHER REPOSITORY, so a run triggered only by changes here would go
-# green on the day the zoo drops a file. That is what the nightly
-# schedule below is for: the guide can break without a commit landing
-# anywhere in this repo.
+# `paths:` is deliberately ABSENT: a path filter would mean editing the
+# checker itself skips the job that runs it. It also would not help — the
+# input that rots is in ANOTHER REPOSITORY, so a run triggered only by
+# changes here would go green on the day the zoo drops a file. That is what
+# the nightly schedule below is for: the guide can break without a commit
+# landing anywhere in this repo.
 #
 # NOT ON PULL REQUESTS: a zoo change can turn it red on a pull request that
 # changed nothing it reads, and no pull request is required to pass it. Run
