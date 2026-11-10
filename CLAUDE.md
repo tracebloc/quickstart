@@ -44,7 +44,7 @@ installs the SDK into a venv of its own and clones the public zoo when
 `ZOO` does not exist. Both targets read the list from the declaration
 through `scripts/check_mutation_wiring.py --run`, so a row file is added
 there and nowhere else; the same script, run on every pull request by
-template-rules.yml, fails if any other workflow runs a row.
+mutation-wiring.yml, fails if any other workflow runs a row.
 
 <!-- org-standards:begin -->
 ## tracebloc engineering standards (org-wide)

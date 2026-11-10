@@ -67,8 +67,8 @@ WEEKLY_EVENTS = frozenset({"schedule", "workflow_dispatch"})
 WEEKLY_TARGET = "mutation-nightly"
 
 ZOO_URL = "https://github.com/tracebloc/model-zoo.git"
-#: The SDK the rows of check_templates.py import, installed as template-rules.yml's
-#: "Install the SDK" step installs it; that step records why each package is there.
+#: The SDK the rows of check_templates.py import: `--no-deps` keeps torch out, and the
+#: second set is exactly what `tracebloc.training.plan` imports on a clean venv.
 SDK_INSTALLS = (("--no-deps", "tracebloc"), ("numpy", "psutil", "requests", "rich", "termcolor", "tqdm"))
 SDK_PROBE = (
     "import importlib.metadata as m\n"
