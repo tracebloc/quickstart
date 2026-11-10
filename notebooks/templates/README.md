@@ -25,13 +25,12 @@ For the guide, see
 | [Tabular / time series](tabular_timeseries.ipynb) | `tabular_classification`, `tabular_regression`, `time_series_classification`, `time_series_forecasting` | 15 | 1 |
 | [Survival](survival.ipynb) | `time_to_event_prediction` | 1 | 1 |
 
-> **What actually enforces this.** `scripts/check_templates.py` is run by
-> `.github/workflows/template-rules.yml` on every PR. Before that workflow
-> existed nothing ran it, so every "enforced" below meant "enforced if the
-> author remembers" — the defect this whole file is otherwise about
-> (the finding that motivated the checker). It is **not yet a required status check**;
-> until an admin adds it to develop's contexts, a red here is visible but
-> not blocking.
+> **Retired.** These notebooks are no longer what ships: the SDK renders the
+> family templates from its own copies, and the rules below are held by the SDK's
+> notebook render tests. CI no longer runs `scripts/check_templates.py` on a pull
+> request; the `d9-rules` check only reports that the rules moved, until it is
+> removed together with these files. Every "enforced" below describes the
+> checker as it was, which still runs locally under `make check`.
 
 The numbers live in [`families.json`](families.json), and
 [`../../scripts/check_templates.py`](../../scripts/check_templates.py) asserts

@@ -1,5 +1,5 @@
 # quickstart: the notebooks' checkers, their mutation rows, and the pre-push hook.
-# CI runs template-rules.yml on a pull request; zoo-paths.yml runs on develop pushes
+# CI runs mutation-wiring.yml on a pull request; zoo-paths.yml runs on develop pushes
 # and nightly, so `make check` is the only pre-merge run of the zoo check. The mutation
 # rows (`rows:` in .github/mutation-coverage.yml) run in CI only on the weekly schedule,
 # as mutation-nightly.yml's `make mutation-nightly`. `make check` runs them as well:
@@ -11,8 +11,8 @@
 #   make install-hooks     the same hook alone; `make hooks-status` says whether it is current
 #
 # The checkers are stdlib Python. check_templates.py cross-checks the SDK when
-# `tracebloc` is importable and prints a note when it is not; CI installs it and sets
-# TRACEBLOC_CHECK_STRICT=1. check_zoo_paths.py needs a model-zoo checkout: ZOO is the
+# `tracebloc` is importable and prints a note when it is not; `make mutation-nightly`
+# installs it for the rows that need it. check_zoo_paths.py needs a model-zoo checkout: ZOO is the
 # sibling clone by default, and the check fails, never skips, without one;
 # `make mutation-nightly` clones the public zoo when ZOO does not exist.
 # check_mutation_wiring.py --run reads the rows from the declaration, so no list of

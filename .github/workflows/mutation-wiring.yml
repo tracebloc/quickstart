@@ -1,0 +1,37 @@
+name: Mutation wiring
+
+# Holds where the mutation rows run: weekly in mutation-nightly.yml and in no other
+# workflow, so no pull request waits on them. `scripts/check_mutation_wiring.py`'s
+# docstring says how.
+#
+# `paths:` is deliberately ABSENT: a pull request that adds a row to any workflow
+# must meet this job, whichever files it touches.
+
+on:
+  pull_request:
+    # No `ready_for_review`: a draft's own run is already the verdict on its head, and
+    # beside the cancelling group below a re-run can leave a cancelled run behind.
+    types: [opened, reopened, synchronize]
+  # `develop` only: staging and main receive the release train's merge commits, whose
+  # tree a develop push run already checked.
+  push:
+    branches: [develop]
+
+concurrency:
+  # A pull request's runs supersede each other; a develop push run is keyed by its
+  # commit, so a newer push never leaves an earlier commit with no verdict.
+  group: mutation-wiring-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || format('{0}-{1}-{2}', github.ref, github.event_name, github.sha) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  mutation-wiring:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Mutation wiring
+        run: python3 scripts/check_mutation_wiring.py
