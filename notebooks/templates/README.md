@@ -27,8 +27,8 @@ For the guide, see
 
 > **Retired.** These notebooks are no longer what ships: the SDK renders the
 > family templates from its own copies, and the rules below are held by the SDK's
-> notebook render tests. CI no longer runs `scripts/check_templates.py`; the
-> required `d9-rules` check only reports that the rules moved, until it is
+> notebook render tests. CI no longer runs `scripts/check_templates.py` on a pull
+> request; the `d9-rules` check only reports that the rules moved, until it is
 > removed together with these files. Every "enforced" below describes the
 > checker as it was, which still runs locally under `make check`.
 

@@ -68,7 +68,7 @@ WEEKLY_TARGET = "mutation-nightly"
 
 ZOO_URL = "https://github.com/tracebloc/model-zoo.git"
 #: The SDK the rows of check_templates.py import: `--no-deps` keeps torch out, and the
-#: second set is exactly what `tracebloc.training.plan` imports on a clean venv.
+#: second set is the light modules `tracebloc.training.plan` imports; SDK_PROBE fails if one is missing.
 SDK_INSTALLS = (("--no-deps", "tracebloc"), ("numpy", "psutil", "requests", "rich", "termcolor", "tqdm"))
 SDK_PROBE = (
     "import importlib.metadata as m\n"
