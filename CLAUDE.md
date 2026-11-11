@@ -7,12 +7,14 @@ and this repo's default reviewer. Rollout: (internal ref).
 ## Checks
 
 Three checkers, each with its own mutation harness. `make check` runs the
-checkers and then every mutation row; the pre-push hook runs it before every
-push, and `make setup` installs that hook in this clone:
+three checkers; the pre-push hook runs it before every push, and `make setup`
+installs that hook in this clone. The mutation rows are the weekly tier, so
+`make check` leaves them out; `make mutations` runs them locally:
 
 ```sh
-make check    # the three checkers, then every mutation row
-make setup    # this clone's pre-push hook, which runs `make check`
+make check       # the three checkers
+make mutations   # every mutation row, under this interpreter
+make setup       # this clone's pre-push hook, which runs `make check`
 python3 scripts/check_templates.py                      # D9 template rules
 python3 scripts/check_zoo_paths.py --zoo ../model-zoo   # zoo paths resolve
 python3 scripts/check_mutation_wiring.py                # where the mutation rows run
@@ -38,8 +40,8 @@ the checker can still fail.
 The harnesses are the `rows:` of `.github/mutation-coverage.yml`. CI runs
 them only on the weekly schedule (`mutation-nightly.yml`, which runs `make
 mutation-nightly` and files a bug when it goes red), never on a pull
-request: a checker your pull request breaks is caught by `make check`
-before you push, or by the next weekly run. `make mutation-nightly`
+request: a checker your pull request breaks is caught by `make mutations`
+when you run it after editing a rule, or by the next weekly run. `make mutation-nightly`
 installs the SDK into a venv of its own and clones the public zoo when
 `ZOO` does not exist. Both targets read the list from the declaration
 through `scripts/check_mutation_wiring.py --run`, so a row file is added
