@@ -39,7 +39,7 @@ Running the rows
 cannot run them. Without `--local` it is the weekly run: the SDK goes into a venv
 of its own (the rows of `check_templates.py` need it), the public model zoo is
 cloned when `--zoo` does not exist, and only this leg's share runs when
-`MUTATION_LEG` and `MUTATION_LEGS` are set. With `--local` (`make check`) it runs
+`MUTATION_LEG` and `MUTATION_LEGS` are set. With `--local` (`make mutations`) it runs
 under this interpreter, against the zoo it is given.
 """
 
