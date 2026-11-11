@@ -210,10 +210,10 @@ TREE_MUTATIONS = (
         lambda w: [f"{PR_WIRING}: job `mutation-wiring` runs scripts/check_templates_mutations.py; {ALONE}"],
     ),
     (
-        "a pull-request workflow runs `make check`, which runs every row",
-        lambda w: _plant_step(w, PR_WIRING, PR_ANCHOR, "      - run: make check\n\n"),
-        lambda w: _step_runs(w, PR_WIRING, "make check"),
-        lambda w: [f"{PR_WIRING}: job `mutation-wiring` runs `make check`, whose dry run runs the mutation rows; {ALONE}"],
+        "a pull-request workflow runs `make mutations`, which runs every row",
+        lambda w: _plant_step(w, PR_WIRING, PR_ANCHOR, "      - run: make mutations\n\n"),
+        lambda w: _step_runs(w, PR_WIRING, "make mutations"),
+        lambda w: [f"{PR_WIRING}: job `mutation-wiring` runs `make mutations`, whose dry run runs the mutation rows; {ALONE}"],
     ),
     (
         "a pull-request workflow runs the weekly entry, hidden in env and bash -c",

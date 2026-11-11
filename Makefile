@@ -1,11 +1,13 @@
 # quickstart: the notebooks' checkers, their mutation rows, and the pre-push hook.
-# CI runs mutation-wiring.yml on a pull request; zoo-paths.yml runs on develop pushes
-# and nightly, so `make check` is the only pre-merge run of the zoo check. The mutation
-# rows (`rows:` in .github/mutation-coverage.yml) run in CI only on the weekly schedule,
-# as mutation-nightly.yml's `make mutation-nightly`. `make check` runs them as well:
-# they take seconds, and catch a checker you broke before you push.
+# CI runs mutation-wiring.yml (`make wiring`) on a pull request; zoo-paths.yml runs
+# `make zoo-paths` on develop pushes and nightly, so `make check` is the only pre-merge
+# run of the zoo check. The mutation rows (`rows:` in .github/mutation-coverage.yml) run
+# in CI only on the weekly schedule, as mutation-nightly.yml's `make mutation-nightly`,
+# and `make check` leaves them out: mutation is the weekly tier, not the pre-push one.
+# Run `make mutations` yourself after editing a rule.
 #
-#   make check             the three checkers, then every mutation row
+#   make check             the three checkers
+#   make mutations         every mutation row, under this interpreter
 #   make mutation-nightly  every mutation row, with the SDK installed: the weekly run
 #   make setup             install this clone's pre-push hook, which runs `make check`
 #   make install-hooks     the same hook alone; `make hooks-status` says whether it is current
@@ -25,7 +27,7 @@ WIRING = $(PYTHON) scripts/check_mutation_wiring.py
 .DEFAULT_GOAL := check
 .PHONY: check templates zoo-paths wiring mutations mutation-nightly setup
 
-check: templates zoo-paths wiring mutations
+check: templates zoo-paths wiring
 
 templates:
 	$(PYTHON) scripts/check_templates.py

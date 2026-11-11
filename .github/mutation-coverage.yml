@@ -14,7 +14,7 @@
 #
 # The rows run on the weekly schedule, as `make mutation-nightly` in
 # .github/workflows/mutation-nightly.yml, and on no pull request. That target and
-# `make check` read this list (scripts/check_mutation_wiring.py --run), so a row
+# `make mutations` read this list (scripts/check_mutation_wiring.py --run), so a row
 # file added here runs from then on; the same script holds that wiring.
 #
 # `exempt:` would list the gaps, each with the ticket that closes it, and can
