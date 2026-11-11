@@ -63,4 +63,4 @@ jobs:
           # silently stop matching the day the default moves.
 
       - name: Every model-zoo path in the notebooks resolves
-        run: python3 scripts/check_zoo_paths.py --zoo model-zoo
+        run: make zoo-paths ZOO=model-zoo
