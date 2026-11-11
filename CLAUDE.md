@@ -1,8 +1,10 @@
+<!-- claude-budget: armed -->
+<!-- root = commands, the area map, rules every session needs; module rules in `<dir>/CLAUDE.md` or `.claude/rules/` with `paths:`; reference in `docs/`; history in commit messages -->
 # CLAUDE.md
 
-Repo-specific guidance for Claude Code sessions goes here, above the
-managed org block: build/test commands, architecture notes, gotchas,
-and this repo's default reviewer. Rollout: (internal ref).
+The public quickstart: the notebooks that walk a user through a first training
+run on tracebloc (`notebooks/`), and the stdlib Python checkers that guard them
+(`scripts/`).
 
 ## Checks
 
@@ -25,25 +27,17 @@ make mutation-nightly                                   # the weekly run of ever
 this repo prints — the guide's table, its `MODEL_PATH` default, the
 README — must exist in a `model-zoo` checkout. It needs one beside this
 repo (`--clone` fetches it), and it **fails rather than skips** when it
-cannot find one. The guide's default `MODEL_PATH` pointed at a file the
-zoo had stopped shipping (#11) precisely because nothing connected the
-two repos; its input lives in another repository, which is why its
-workflow runs on the develop push and nightly, and not on pull requests:
-a zoo change could turn it red on any pull request here. CI does not run
-it on your pull request, so run it yourself before you push.
+cannot find one.
+CI does not run it on your pull request, so run it yourself before you push.
 
-Each has a `_mutations.py` sibling that mutates a copy
-of the tree and asserts every rule is SEEN to fail. Run it after editing
-a rule: a checker passing says the tree is clean, only a mutation says
-the checker can still fail.
+## Map
 
-The harnesses are the `rows:` of `.github/mutation-coverage.yml`. CI runs
-them only on the weekly schedule (`mutation-nightly.yml`, which runs `make
-mutation-nightly` and files a bug when it goes red), never on a pull
-request: a checker your pull request breaks is caught by `make mutations`
-when you run it after editing a rule, or by the next weekly run. `make mutation-nightly`
-installs the SDK into a venv of its own and clones the public zoo when
-`ZOO` does not exist. Both targets read the list from the declaration
+- `notebooks/`: the training guide (`traceblocTrainingGuide.ipynb`) and the
+  retired per-family templates; their rules are in `notebooks/templates/README.md`.
+- `scripts/`, `Makefile`, `.github/mutation-coverage.yml`: the checkers and
+  their mutation rows; rules in `.claude/rules/checks.md`.
+
+`make mutations` and `make mutation-nightly` read the list from the declaration
 through `scripts/check_mutation_wiring.py --run`, so a row file is added
 there and nowhere else; the same script, run on every pull request by
 mutation-wiring.yml, fails if any other workflow runs a row.
