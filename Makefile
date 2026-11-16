@@ -1,12 +1,13 @@
 # quickstart: the notebooks' checkers, their mutation rows, and the pre-push hook.
 # CI runs mutation-wiring.yml (`make wiring`) on a pull request; zoo-paths.yml runs
-# `make zoo-paths` on develop pushes and nightly, so `make check` is the only pre-merge
-# run of the zoo check. The mutation rows (`rows:` in .github/mutation-coverage.yml) run
-# in CI only on the weekly schedule, as mutation-nightly.yml's `make mutation-nightly`,
-# and `make check` leaves them out: mutation is the weekly tier, not the pre-push one.
+# `make zoo-paths` on develop pushes and nightly, and records it on a pull request
+# without blocking, so `make check` is the only pre-merge run that can fail on it.
+# The mutation rows (`rows:` in .github/mutation-coverage.yml) run in CI only on the
+# weekly schedule, as mutation-nightly.yml's `make mutation-nightly`, and `make check` leaves them out: mutation is the weekly tier, not the pre-push one.
 # Run `make mutations` yourself after editing a rule.
 #
-#   make check             the three checkers
+#   make check             the zoo-paths and wiring checkers
+#   make templates         the retired D9 template rules, which `make check` leaves out
 #   make mutations         every mutation row, under this interpreter
 #   make mutation-nightly  every mutation row, with the SDK installed: the weekly run
 #   make setup             install this clone's pre-push hook, which runs `make check`
@@ -27,7 +28,9 @@ WIRING = $(PYTHON) scripts/check_mutation_wiring.py
 .DEFAULT_GOAL := check
 .PHONY: check templates zoo-paths wiring mutations mutation-nightly setup
 
-check: templates zoo-paths wiring
+# `templates` is retired from `check`: the SDK's notebook render tests hold the D9 rules.
+# Its checker stays while the weekly mutation row still runs it.
+check: zoo-paths wiring
 
 templates:
 	$(PYTHON) scripts/check_templates.py
