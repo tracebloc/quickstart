@@ -8,13 +8,15 @@ run on tracebloc (`notebooks/`), and the stdlib Python checkers that guard them
 
 ## Checks
 
-Three checkers, each with its own mutation harness. `make check` runs the
-three checkers; the pre-push hook runs it before every push, and `make setup`
-installs that hook in this clone. The mutation rows are the weekly tier, so
+Three checkers, each with its own mutation harness. `make check` runs
+`check_zoo_paths.py` and `check_mutation_wiring.py`; the retired template
+checker runs only as `make templates` and in its weekly mutation row. The
+pre-push hook runs `make check` before every push, and `make setup` installs
+that hook in this clone. The mutation rows are the weekly tier, so
 `make check` leaves them out; `make mutations` runs them locally:
 
 ```sh
-make check       # the three checkers
+make check       # zoo paths and mutation wiring
 make mutations   # every mutation row, under this interpreter
 make setup       # this clone's pre-push hook, which runs `make check`
 python3 scripts/check_templates.py                      # D9 template rules
@@ -28,7 +30,8 @@ this repo prints — the guide's table, its `MODEL_PATH` default, the
 README — must exist in a `model-zoo` checkout. It needs one beside this
 repo (`--clone` fetches it), and it **fails rather than skips** when it
 cannot find one.
-CI does not run it on your pull request, so run it yourself before you push.
+On a pull request CI only records it and never blocks, so run it yourself
+before you push.
 
 ## Map
 
