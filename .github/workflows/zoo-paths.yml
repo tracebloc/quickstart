@@ -16,15 +16,18 @@ name: Model-zoo paths
 # the nightly schedule below is for: the guide can break without a commit
 # landing anywhere in this repo.
 #
-# NOT ON PULL REQUESTS: a zoo change can turn it red on a pull request that
-# changed nothing it reads, and no pull request is required to pass it. Run
-# `python3 scripts/check_zoo_paths.py --zoo ../model-zoo` before you push.
+# On a pull request it records and never blocks: a zoo change can turn it red
+# on a pull request that changed nothing it reads, so `verdict` writes the
+# outcome to the run summary and passes. No branch protection requires it.
+# Run `python3 scripts/check_zoo_paths.py --zoo ../model-zoo` before you push.
 #
 # The checker's mutation harness is not run here: every mutation row runs on the
 # weekly schedule, in mutation-nightly.yml (`make mutation-nightly`), against a
 # fresh clone of the zoo's default branch.
 
 on:
+  pull_request:
+    branches: [develop]
   # `develop` only: staging and main receive the release train's merge commits, whose
   # tree a develop push run already checked, and no protection on them reads this job.
   push:
@@ -45,9 +48,44 @@ permissions:
   contents: read
 
 jobs:
+  # Whether the pull request touched what the check reads; every other event
+  # checks unconditionally, since the zoo itself can drift.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      zoo: ${{ steps.diff.outputs.zoo }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Did the change touch the notebooks, the README or the checker
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" != pull_request ]; then
+            echo "zoo=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "$BASE...$HEAD")
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -Eq '^(notebooks/|README\.md$|Makefile$|scripts/check_zoo_paths\.py$|\.github/workflows/zoo-paths\.yml$)'; then
+            echo "zoo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "zoo=false" >> "$GITHUB_OUTPUT"
+          fi
+
   zoo-paths:
+    needs: changes
+    if: needs.changes.outputs.zoo == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      outcome: ${{ steps.check.outcome }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -63,4 +101,36 @@ jobs:
           # silently stop matching the day the default moves.
 
       - name: Every model-zoo path in the notebooks resolves
+        id: check
+        # Record-only on a pull request: `verdict` reports the outcome. Push and
+        # scheduled runs still fail here.
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: make zoo-paths ZOO=model-zoo
+
+  # Always reports, so a pull request carries one zoo-paths verdict whether or
+  # not the check ran. Record-only: it passes on a pull request whatever it read.
+  verdict:
+    needs: [changes, zoo-paths]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Record the zoo-paths outcome
+        env:
+          EVENT: ${{ github.event_name }}
+          CHANGES: ${{ needs.changes.result }}
+          JOB: ${{ needs.zoo-paths.result }}
+          OUTCOME: ${{ needs.zoo-paths.outputs.outcome }}
+        run: |
+          if [ "$CHANGES" != success ]; then
+            line="could not tell what changed (changes: $CHANGES)"
+          elif [ "$JOB" = skipped ]; then
+            line="not run: nothing the check reads changed"
+          else
+            line="ran: job $JOB, check ${OUTCOME:-unknown}"
+          fi
+          echo "zoo-paths ($EVENT): $line" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$EVENT" = pull_request ]; then
+            exit 0
+          fi
+          [ "$CHANGES" = success ] && [ "$JOB" = success ]
