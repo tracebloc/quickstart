@@ -17,7 +17,7 @@
     "full-settings-cell run whose cycles/epochs match this file. A family that",
     "is not must carry `unverified` naming the ticket that explains why; the",
     "checker refuses a family that is neither. So changing a pre-fill here fails",
-    "the check until the dev run is redone and the evidence refreshed.",
+    "the check until the run is redone on staging and the evidence refreshed.",
     "",
     "`frameworks` is the set of frameworks the model zoo actually ships for this",
     "family's categories, with the retired TensorFlow ones excluded. It matters",

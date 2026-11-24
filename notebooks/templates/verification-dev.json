@@ -1,11 +1,12 @@
 {
   "_comment": [
-    "Live dev verification records for the family templates. A template",
+    "Live verification records for the family templates. A template",
     "ships only once a live",
-    "experiment on dev has reached COMPLETED using the template's OWN",
-    "defaults, so these records are what licenses each pre-fill.",
+    "experiment has reached COMPLETED using the template's OWN",
+    "defaults, so these records are what licenses each pre-fill. They were",
+    "captured on the dev environment, since retired; a refresh runs on staging.",
     "",
-    "Committed rather than left on dev on purpose: the dev cluster gets",
+    "Committed rather than left on the platform on purpose: a cluster gets",
     "swept, and a verification that depends on state we do not control is",
     "a claim, not a proof. scripts/check_templates.py rule 13 binds these",
     "to families.json, so changing a pre-fill fails the check until the",
