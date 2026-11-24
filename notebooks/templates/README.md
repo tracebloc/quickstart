@@ -105,15 +105,17 @@ registry rather than being restated here.
 
 ## Verification status
 
-D9: *a template ships only once a live experiment on dev has reached COMPLETED
+D9: *a template ships only once a live experiment has reached COMPLETED
 using its own defaults* — a pre-fill nobody has run is a guess with a Start
 button attached.
 
-The records are in [`verification-dev.json`](verification-dev.json), committed
-rather than left on the dev cluster: dev gets swept, and a verification that
-depends on state we do not control is a claim, not a proof. The checker's
-rule 13 binds that file to `families.json`, so **editing a pre-fill here fails
-the check** until the dev run is redone and the evidence refreshed. A family
+The records are in [`verification-dev.json`](verification-dev.json). They were
+captured on the dev environment, which has since been retired; a run that
+refreshes them goes on staging. They are committed rather than left on the
+platform: a cluster gets swept, and a verification that depends on state we do
+not control is a claim, not a proof. The checker's rule 13 binds that file to
+`families.json`, so **editing a pre-fill here fails the check** until the run
+is redone on staging and the evidence refreshed. A family
 that cannot be verified must instead carry `unverified` in `families.json`
 naming the ticket that explains why; a family that is neither is refused.
 
