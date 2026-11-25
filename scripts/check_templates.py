@@ -1329,7 +1329,7 @@ def main() -> int:
             errors.append(
                 f"{key}: pre-fills cycles={fam['cycles']}, "
                 f"epochs={fam['epochs']} are not backed by a COMPLETED "
-                f"full-settings-cell run ({why}). Re-run on dev and refresh "
+                f"full-settings-cell run ({why}). Re-run on staging and refresh "
                 f"verification-dev.json, or mark the family `unverified` with "
                 f"the ticket that explains why."
             )
