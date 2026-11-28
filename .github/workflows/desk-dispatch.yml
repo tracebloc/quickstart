@@ -1,7 +1,7 @@
 # GENERATED FILE -- DO NOT EDIT BY HAND.
 #
 # Self-contained copy of the reusable workflow `.github/workflows/desk-dispatch.yml`
-# (blob 1bde58967f2f8c4e725055d07b5aefb7dc2a61d0) folded with the private source repo's own caller of it,
+# (blob 43b33010c093282dd59286af6044a0639a8d37c6) folded with the private source repo's own caller of it,
 # `.github/workflows/desk-dispatch-caller.yml` (blob da7925b437da4dea17b83f9fff5d9516541a5076), for a PUBLIC repo: GitHub lets a
 # public repo `uses:` a reusable workflow only from a public repo, and the
 # reusables live in the private source repo. So this file carries the
@@ -77,10 +77,12 @@
 #     Bugbot's own suite): every CI run and commit status on the
 #     head terminal and green, `reviewer` requested or already on the PR, head
 #     not yet reviewed                                    -> a review session
-#   a run or status still running / any red / mergeable_state dirty
-#                                                       -> skip (the last one to
-#                                                          finish fires; red waits
-#                                                          for the author's fix)
+#   a run or status still running, a pending `UI Tests`
+#     ((internal ref) D138) / any red / mergeable_state dirty -> skip (the last one to
+#                                                          finish fires, once per
+#                                                          commit)
+#   the (internal ref) App's green PR                  -> skip: the sweep approves it
+#                                                          by rule ((internal ref) D142)
 #   pull_request dequeued, ready_for_review or        -> a REQUEUE session for the desk
 #     auto_merge_disabled: a desk APPROVE stands on       owner whose APPROVE stands, once
 #     the head, no auto-merge, not in the merge queue,    per drop (`decide_requeue`;
@@ -92,14 +94,16 @@
 #   a held red that is only CANCELLED or FAILED runs  -> re-run each in place, as
 #     on the live head                                    the App, once per run; no
 #                                                          session (`heal_retryable`)
-#   FIX MODE on (`vars.CRD_FIX_MODE`, the dispatcher's  -> a FIX session where a review
-#     switch; (internal ref) item 1): a head      would be owed, once per head;
-#     red on a held check, or dirty -- even before any    re-entered when the base moves
-#     CI ran -- the reviewer requested or on the PR       (a red: once a red it met is
-#                                                          green on the base tip); none
-#                                                          while the base tip carries
-#                                                          every held red
-#                                                          (`base_red_hold`)
+#   FIX MODE on (`vars.CRD_FIX_MODE`, the dispatcher's  -> its live builder's: ONE
+#     switch; (internal ref) item 1): a head      `DESK RED <head7>` comment, no
+#     red on a held check, or dirty -- even before any    session ((internal ref) D139); the
+#     CI ran -- the reviewer requested or on the PR       sweep fires the FIX once the
+#                                                          head sat 45 minutes. A gone
+#                                                          builder (`Builder: none`, the
+#                                                          App, Dependabot): a FIX now,
+#                                                          once per head; none while the
+#                                                          base tip carries every held
+#                                                          red (`base_red_hold`)
 #
 # WHO STAFFS: CODEOWNERS ((internal ref)). Every repo with a desk caller carries
 # `* @tracebloc-review` in its CODEOWNERS, so GitHub requests `reviewer` when a PR
@@ -117,8 +121,8 @@
 # review latency becomes CI latency, by design. What "green" means is
 # `head_state()` in scripts/desk-dispatch.py, shared with the sweep: every CI
 # check run and commit status terminal and none red,
-# the dispatchers' own `... / dispatch` runs excluded; `mergeable_state` is read
-# for `dirty` only.
+# the dispatchers' own `... / dispatch` runs and `desk / verdict-footer` excluded
+# ((internal ref) D138); `mergeable_state` is read for `dirty` only.
 #
 # WHY workflow_run, AND check_suite ONLY FOR BUGBOT. `workflow_run` names the CI
 # workflows a caller follows, so its list is a contract caller-drift can check. A
@@ -325,8 +329,32 @@ jobs:
       - name: Note when this job started
         id: started
         run: echo "at=$(date +%s)" >> "$GITHUB_OUTPUT"
+      # Three attempts, each run only after the one before failed: the action
+      # retries HTTP 5xx only. mint-scope.py holds the rule.
       - name: Mint a read-only token for org-config (private; the caller's own token cannot read it)
+        id: org-config-token-try1
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
+          private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: org-config
+          permission-contents: read
+      - name: Mint a read-only token for org-config (private; the caller's own token cannot read it), retry 1
+        id: org-config-token-try2
+        if: steps.org-config-token-try1.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
+          private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: org-config
+          permission-contents: read
+      - name: Mint a read-only token for org-config (private; the caller's own token cannot read it), retry 2
         id: org-config-token
+        if: steps.org-config-token-try2.outcome == 'failure'
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
@@ -360,7 +388,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: tracebloc/org-config
-          token: ${{ steps.org-config-token.outputs.token }}
+          token: ${{ steps.org-config-token-try1.outputs.token || steps.org-config-token-try2.outputs.token || steps.org-config-token.outputs.token }}
           ref: ${{ 'main' }}
           path: .org-config-tools
           persist-credentials: false
@@ -398,9 +426,35 @@ jobs:
       # when the pre-check named a bug (`FLAKY_OUTPUT`), whatever its verdict.
       # `continue-on-error`, DELIBERATELY: a card that could not be placed is an error
       # annotation, never a lost review, and the next heal of the check places it again.
+      # Three attempts, each run only after the one before failed: the action
+      # retries HTTP 5xx only. mint-scope.py holds the rule.
       - name: Mint a board token for a flaky bug's card (tolerates a refused mint)
-        id: board-token
+        id: board-token-try1
         if: steps.precheck.outputs.flaky != ''
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
+          private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-issues: read
+          permission-organization-projects: write
+      - name: Mint a board token for a flaky bug's card (tolerates a refused mint), retry 1
+        id: board-token-try2
+        if: steps.board-token-try1.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
+          private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-issues: read
+          permission-organization-projects: write
+      - name: Mint a board token for a flaky bug's card (tolerates a refused mint), retry 2
+        id: board-token
+        if: steps.board-token-try2.outcome == 'failure'
         continue-on-error: true
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
@@ -415,7 +469,7 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          KANBAN_TOKEN: ${{ steps.board-token.outputs.token }}
+          KANBAN_TOKEN: ${{ steps.board-token-try1.outputs.token || steps.board-token-try2.outputs.token || steps.board-token.outputs.token }}
           FLAKY_ISSUES: ${{ steps.precheck.outputs.flaky }}
         run: python3 .org-config-tools/scripts/nightly-red-issue.py place --repo "$GITHUB_REPOSITORY" --issues "$FLAKY_ISSUES"
       # SCOPED to the caller repo and to actions: write, for exactly one call: an
@@ -426,9 +480,33 @@ jobs:
       # a refused mint must not redden every dispatch, and the script refuses ONLY when
       # it finds a red it could have re-run. Minted on every event that gets past the
       # pre-check: each is a finished commit, which can meet a red.
+      # Three attempts, each run only after the one before failed: the action
+      # retries HTTP 5xx only. mint-scope.py holds the rule.
       - name: Mint an actions token for re-running a cancelled required run in place (tolerates a refused mint)
-        id: rerun-token
+        id: rerun-token-try1
         if: steps.precheck.outputs.go != 'false'
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
+          private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-actions: write
+      - name: Mint an actions token for re-running a cancelled required run in place (tolerates a refused mint), retry 1
+        id: rerun-token-try2
+        if: steps.rerun-token-try1.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
+          private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-actions: write
+      - name: Mint an actions token for re-running a cancelled required run in place (tolerates a refused mint), retry 2
+        id: rerun-token
+        if: steps.rerun-token-try2.outcome == 'failure'
         continue-on-error: true
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
@@ -459,9 +537,33 @@ jobs:
       # so every red holds the head -- the fail-CLOSED direction (rule 3). Its ONE
       # `if:` is the pre-check's: every caller trigger that gets past it reaches a
       # `gate_required` call.
+      # Three attempts, each run only after the one before failed: the action
+      # retries HTTP 5xx only. mint-scope.py holds the rule.
       - name: Mint a protection-read token for the base branch's required contexts (tolerates a refused mint)
-        id: protection-token
+        id: protection-token-try1
         if: steps.precheck.outputs.go != 'false'
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
+          private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-administration: read
+      - name: Mint a protection-read token for the base branch's required contexts (tolerates a refused mint), retry 1
+        id: protection-token-try2
+        if: steps.protection-token-try1.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.RELEASE_TRAIN_APP_ID }}
+          private-key: ${{ secrets.RELEASE_TRAIN_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-administration: read
+      - name: Mint a protection-read token for the base branch's required contexts (tolerates a refused mint), retry 2
+        id: protection-token
+        if: steps.protection-token-try2.outcome == 'failure'
         continue-on-error: true
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
@@ -475,8 +577,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           DISPATCH_T0: ${{ steps.started.outputs.at }}
-          DESK_RERUN_TOKEN: ${{ steps.rerun-token.outputs.token }}
-          DESK_PROTECTION_TOKEN: ${{ steps.protection-token.outputs.token }}
+          DESK_RERUN_TOKEN: ${{ steps.rerun-token-try1.outputs.token || steps.rerun-token-try2.outputs.token || steps.rerun-token.outputs.token }}
+          DESK_PROTECTION_TOKEN: ${{ steps.protection-token-try1.outputs.token || steps.protection-token-try2.outputs.token || steps.protection-token.outputs.token }}
           # FIX MODE ((internal ref) item 1): the DISPATCHER's switch -- whether
           # the desk is fired on a red or conflicting head. The review SESSION reads its
           # own `CRD_FIX_MODE` from the review routine's own environment, which no
